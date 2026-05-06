@@ -54,21 +54,24 @@ jobs:
         env:
           TAG: ${{ github.event.release.tag_name || inputs.tag_name }}
           SOURCE_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          SOURCE_URL="https://github.com/${SOURCE_REPO}/archive/refs/tags/${TAG}.tar.gz"
-
-          curl -fsSL "${SOURCE_URL}" -o /tmp/graincrawl-src.tar.gz
-          SHA256="$(shasum -a 256 /tmp/graincrawl-src.tar.gz | awk '{print $1}')"
+          REVISION="$(gh api "repos/${SOURCE_REPO}/git/ref/tags/${TAG}" --jq '.object.sha')"
+          if [ "$(gh api "repos/${SOURCE_REPO}/git/ref/tags/${TAG}" --jq '.object.type')" = "tag" ]; then
+            REVISION="$(gh api "repos/${SOURCE_REPO}/git/tags/${REVISION}" --jq '.object.sha')"
+          fi
 
           mkdir -p Formula
           cat > Formula/graincrawl.rb <<EOF
           class Graincrawl < Formula
             desc "Local-first Granola crawler into SQLite and Markdown"
             homepage "https://github.com/${SOURCE_REPO}"
-            url "${SOURCE_URL}"
-            sha256 "${SHA256}"
+            url "https://github.com/${SOURCE_REPO}.git",
+                tag: "${TAG}",
+                revision: "${REVISION}"
             license "MIT"
+            version "${TAG#v}"
 
             depends_on "go" => :build
 

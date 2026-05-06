@@ -49,6 +49,12 @@ func (a App) Run(ctx context.Context, args []string) error {
 		return a.runTranscripts(ctx, stdout, flags, cmdArgs)
 	case "panels":
 		return a.runPanels(ctx, stdout, flags, cmdArgs)
+	case "sources":
+		return a.runSources(ctx, stdout, flags)
+	case "unlock":
+		return a.runUnlock(ctx, stdout, flags)
+	case "secrets":
+		return a.runSecrets(ctx, stdout, flags)
 	case "help":
 		_, err := io.WriteString(stdout, usage)
 		return err

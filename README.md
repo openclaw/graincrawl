@@ -1,3 +1,5 @@
+<img src="docs/graincrawl_banner.jpg" alt="graincrawl banner"/>
+
 # 🌾 graincrawl
 
 `graincrawl` archives Granola notes, transcripts, panels, people, workspaces,

@@ -39,4 +39,11 @@ func TestStoreRoundTrip(t *testing.T) {
 	if !ok || got.ID != note.ID || got.Title == nil || *got.Title != title {
 		t.Fatalf("unexpected note: %#v", got)
 	}
+	results, err := st.SearchNotes(ctx, "planning", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 || results[0].ID != note.ID {
+		t.Fatalf("unexpected search results: %#v", results)
+	}
 }

@@ -10,7 +10,7 @@ import (
 
 var completionCommands = []string{
 	"version", "init", "doctor", "metadata", "status", "sync", "refresh",
-	"runs", "notes", "note", "transcripts", "panels", "people", "workspaces",
+	"runs", "notes", "search", "note", "transcripts", "panels", "people", "workspaces",
 	"sources", "unlock", "secrets", "export", "snapshot", "import", "tui",
 	"completion", "help",
 }

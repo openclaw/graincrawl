@@ -49,6 +49,8 @@ func (a App) Run(ctx context.Context, args []string) error {
 		return a.runRuns(ctx, stdout, flags, cmdArgs)
 	case "notes":
 		return a.runNotes(ctx, stdout, flags, cmdArgs)
+	case "search":
+		return a.runSearch(ctx, stdout, flags, cmdArgs)
 	case "note":
 		return a.runNote(ctx, stdout, flags, cmdArgs)
 	case "transcripts":

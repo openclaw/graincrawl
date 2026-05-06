@@ -15,6 +15,7 @@ Commands:
   refresh                 Alias for sync.
   runs                    List sync runs.
   notes                   List archived notes.
+  search <query>          Search archived notes.
   note get <id>           Show one archived note.
   transcripts get <id>    Show transcript chunks for a note.
   panels get <id>         Show panels for a note.

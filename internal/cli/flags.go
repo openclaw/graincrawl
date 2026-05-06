@@ -6,6 +6,7 @@ type GlobalFlags struct {
 	ConfigPath string
 	JSON       bool
 	Help       bool
+	Version    bool
 }
 
 func parseGlobalFlags(args []string) (GlobalFlags, []string) {
@@ -18,6 +19,8 @@ func parseGlobalFlags(args []string) (GlobalFlags, []string) {
 			flags.JSON = true
 		case "--help", "-h":
 			flags.Help = true
+		case "--version", "-v":
+			flags.Version = true
 		case "--config":
 			if i+1 < len(args) {
 				flags.ConfigPath = args[i+1]

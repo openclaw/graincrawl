@@ -57,6 +57,17 @@ func TestAppStatusAndSecurityCommandsUseTempConfig(t *testing.T) {
 	}
 }
 
+func TestAppGlobalVersionFlag(t *testing.T) {
+	var out bytes.Buffer
+	app := App{Stdout: &out}
+	if err := app.Run(context.Background(), []string{"--version"}); err != nil {
+		t.Fatalf("--version failed: %v", err)
+	}
+	if !strings.Contains(out.String(), "version") {
+		t.Fatalf("--version output missing version: %s", out.String())
+	}
+}
+
 func TestAppSnapshotExportImportUseTempArchive(t *testing.T) {
 	cfgPath := writeTestConfig(t)
 	snapshotDir := filepath.Join(t.TempDir(), "snapshot")

@@ -3,7 +3,7 @@ package cli
 const usage = `graincrawl archives Granola notes locally.
 
 Usage:
-  graincrawl [--json] [--config <path>] <command> [args]
+  graincrawl [--json] [--config <path>] [--version] <command> [args]
 
 Commands:
   version                 Show build metadata.

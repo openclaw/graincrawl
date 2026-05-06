@@ -25,6 +25,9 @@ func (a App) Run(ctx context.Context, args []string) error {
 		stdout = io.Discard
 	}
 	flags, rest := parseGlobalFlags(args)
+	if flags.Version {
+		return a.runVersion(stdout, flags)
+	}
 	if flags.Help || len(rest) == 0 {
 		_, err := io.WriteString(stdout, usage)
 		return err

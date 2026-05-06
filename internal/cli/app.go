@@ -57,6 +57,14 @@ func (a App) Run(ctx context.Context, args []string) error {
 		return a.runSecrets(ctx, stdout, flags)
 	case "export":
 		return a.runExport(ctx, stdout, flags, cmdArgs)
+	case "snapshot":
+		return a.runPlaceholder(stdout, flags, "snapshot", "portable snapshots are not implemented yet")
+	case "import":
+		return a.runPlaceholder(stdout, flags, "import", "snapshot import is not implemented yet")
+	case "tui":
+		return a.runPlaceholder(stdout, flags, "tui", "terminal browser is not implemented yet")
+	case "completion":
+		return a.runPlaceholder(stdout, flags, "completion", "shell completion is not implemented yet")
 	case "help":
 		_, err := io.WriteString(stdout, usage)
 		return err

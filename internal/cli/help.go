@@ -27,8 +27,8 @@ Commands:
   export markdown         Export notes as Markdown.
   snapshot create         Create a portable crawlkit snapshot.
   import <path>           Import a portable crawlkit snapshot.
-  tui                     Open the terminal browser placeholder.
-  completion              Print shell completion placeholder.
+  tui                     Browse archived notes in the terminal.
+  completion              Print shell completion for bash or zsh.
 
 Examples:
   graincrawl doctor --json

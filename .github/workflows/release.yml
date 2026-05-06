@@ -58,7 +58,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check existing release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "RELEASE_EXISTS=1" >> "$GITHUB_ENV"
+          else
+            echo "RELEASE_EXISTS=0" >> "$GITHUB_ENV"
+          fi
+
       - name: Publish release from Release Drafter
+        if: ${{ env.RELEASE_EXISTS != '1' }}
         uses: release-drafter/release-drafter@v7
         with:
           publish: true

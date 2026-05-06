@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/pelletier/go-toml/v2 v2.3.0
-	github.com/vincentkoc/crawlkit v0.4.0
+	github.com/vincentkoc/crawlkit v0.4.1
 	modernc.org/sqlite v1.50.0
 )
 

@@ -20,6 +20,9 @@ func TestAppStatusAndSecurityCommandsUseTempConfig(t *testing.T) {
 		{"--json", "--config", cfgPath, "import"},
 		{"--json", "--config", cfgPath, "tui"},
 		{"--json", "--config", cfgPath, "completion"},
+		{"--json", "--config", cfgPath, "runs"},
+		{"--json", "--config", cfgPath, "people"},
+		{"--json", "--config", cfgPath, "workspaces"},
 	} {
 		var out bytes.Buffer
 		app := App{Stdout: &out}

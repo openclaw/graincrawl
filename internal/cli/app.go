@@ -41,8 +41,12 @@ func (a App) Run(ctx context.Context, args []string) error {
 		return a.runMetadata(ctx, stdout, flags)
 	case "sync":
 		return a.runSync(ctx, stdout, flags, cmdArgs)
+	case "refresh":
+		return a.runSync(ctx, stdout, flags, cmdArgs)
 	case "status":
 		return a.runStatus(ctx, stdout, flags)
+	case "runs":
+		return a.runRuns(ctx, stdout, flags, cmdArgs)
 	case "notes":
 		return a.runNotes(ctx, stdout, flags, cmdArgs)
 	case "note":
@@ -51,6 +55,10 @@ func (a App) Run(ctx context.Context, args []string) error {
 		return a.runTranscripts(ctx, stdout, flags, cmdArgs)
 	case "panels":
 		return a.runPanels(ctx, stdout, flags, cmdArgs)
+	case "people":
+		return a.runSourceObjectList(ctx, stdout, flags, cmdArgs, "person")
+	case "workspaces":
+		return a.runSourceObjectList(ctx, stdout, flags, cmdArgs, "workspace")
 	case "sources":
 		return a.runSources(ctx, stdout, flags)
 	case "unlock":

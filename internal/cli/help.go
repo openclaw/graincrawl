@@ -12,10 +12,14 @@ Commands:
   metadata                Print crawlkit control metadata.
   status                  Show archive status.
   sync                    Sync from a source.
+  refresh                 Alias for sync.
+  runs                    List sync runs.
   notes                   List archived notes.
   note get <id>           Show one archived note.
   transcripts get <id>    Show transcript chunks for a note.
   panels get <id>         Show panels for a note.
+  people                  List retained people source objects.
+  workspaces              List retained workspace source objects.
   sources                 Show source adapter support.
   unlock                  Explain explicit unlock surfaces.
   secrets                 Inspect graincrawl-managed secret state.

@@ -16,7 +16,6 @@ func TestAppStatusAndSecurityCommandsUseTempConfig(t *testing.T) {
 		{"--json", "--config", cfgPath, "sources"},
 		{"--json", "--config", cfgPath, "unlock"},
 		{"--json", "--config", cfgPath, "secrets"},
-		{"--json", "--config", cfgPath, "tui"},
 		{"--json", "--config", cfgPath, "completion"},
 		{"--json", "--config", cfgPath, "runs"},
 		{"--json", "--config", cfgPath, "people"},
@@ -30,6 +29,14 @@ func TestAppStatusAndSecurityCommandsUseTempConfig(t *testing.T) {
 		if !strings.Contains(out.String(), `"ok": true`) {
 			t.Fatalf("%v did not return ok envelope: %s", command, out.String())
 		}
+	}
+	var tuiOut bytes.Buffer
+	app := App{Stdout: &tuiOut}
+	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "tui"}); err != nil {
+		t.Fatalf("tui json failed: %v", err)
+	}
+	if !strings.Contains(tuiOut.String(), "[]") {
+		t.Fatalf("tui json did not return rows: %s", tuiOut.String())
 	}
 	for _, command := range [][]string{
 		{"--json", "--config", cfgPath, "metadata"},

@@ -72,7 +72,7 @@ func (a App) Run(ctx context.Context, args []string) error {
 	case "import":
 		return a.runImport(ctx, stdout, flags, cmdArgs)
 	case "tui":
-		return a.runPlaceholder(stdout, flags, "tui", "terminal browser is not implemented yet")
+		return a.runTUI(ctx, stdout, flags, cmdArgs)
 	case "completion":
 		return a.runCompletion(stdout, flags, cmdArgs)
 	case "help":

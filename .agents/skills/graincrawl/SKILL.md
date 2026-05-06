@@ -59,6 +59,25 @@ graincrawl transcripts get <id>
 graincrawl panels get <id>
 ```
 
+## SQL
+
+`graincrawl` does not currently expose a first-class `sql` command. For exact
+local archive counts or rankings, discover the configured DB from status and
+open it read-only with SQLite.
+
+Useful examples:
+
+```bash
+sqlite3 -readonly "$(graincrawl status --json | jq -r '.database_path')" \
+  "select count(*) as notes from notes;"
+sqlite3 -readonly "$(graincrawl status --json | jq -r '.database_path')" \
+  "select source, count(*) as notes from notes group by source order by notes desc;"
+sqlite3 -readonly "$(graincrawl status --json | jq -r '.database_path')" \
+  "select title, updated_at from notes order by updated_at desc limit 20;"
+```
+
+Do not run mutating SQL against the archive.
+
 When the installed CLI lacks a new feature, build or run from
 `~/GIT/_Perso/graincrawl` before concluding the feature is missing.
 

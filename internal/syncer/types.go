@@ -7,6 +7,8 @@ type Options struct {
 	Limit              int          `json:"limit"`
 	IncludeTranscripts bool         `json:"include_transcripts"`
 	IncludePanels      bool         `json:"include_panels"`
+	SkipTranscripts    bool         `json:"-"`
+	SkipPanels         bool         `json:"-"`
 }
 
 type Result struct {

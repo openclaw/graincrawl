@@ -17,8 +17,8 @@ func parseSyncOptions(args []string) syncer.Options {
 			opts.Limit = n
 		}
 	}
-	opts.IncludeTranscripts = !hasFlag(args, "--no-transcripts")
-	opts.IncludePanels = !hasFlag(args, "--no-panels")
+	opts.SkipTranscripts = hasFlag(args, "--no-transcripts")
+	opts.SkipPanels = hasFlag(args, "--no-panels")
 	return opts
 }
 

@@ -26,6 +26,12 @@ func DesktopCache(ctx context.Context, cfg config.Config, st *store.Store, opts 
 		if opts.Limit > 0 && count >= opts.Limit {
 			break
 		}
+		if err := retainSourceObject(ctx, st, source, "document", doc.ID, doc.ID, doc, now); err != nil {
+			return result, err
+		}
+		if err := retainPeople(ctx, st, source, doc.ID, doc.People, now); err != nil {
+			return result, err
+		}
 		note, err := cachev6.NoteFromDocument(doc, now)
 		if err != nil {
 			return result, err
@@ -37,6 +43,9 @@ func DesktopCache(ctx context.Context, cfg config.Config, st *store.Store, opts 
 		result.Notes++
 		if opts.IncludeTranscripts {
 			for _, chunk := range file.Cache.State.Transcripts[doc.ID] {
+				if err := retainSourceObject(ctx, st, source, "transcript_chunk", chunk.ID, doc.ID, chunk, now); err != nil {
+					return result, err
+				}
 				modelChunk, err := cachev6.TranscriptFromCache(chunk)
 				if err != nil {
 					return result, err

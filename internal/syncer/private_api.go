@@ -35,6 +35,15 @@ func PrivateAPI(ctx context.Context, cfg config.Config, st *store.Store, opts Op
 		Platform:      cfg.API.Platform,
 		WorkspaceID:   workspace,
 	}
+	now := time.Now().UTC()
+	for _, workspaceID := range user.WorkspaceIDs {
+		if err := retainSourceObject(ctx, st, model.SourcePrivateAPI, "workspace", workspaceID, "", map[string]any{
+			"id":     workspaceID,
+			"active": workspaceID == workspace,
+		}, now); err != nil {
+			return Result{}, err
+		}
+	}
 	return syncPrivate(ctx, client, st, opts, cfg.API.IncludeSharedWithMe)
 }
 
@@ -53,6 +62,12 @@ func syncPrivate(ctx context.Context, client privateapi.Client, st *store.Store,
 	}
 	now := time.Now().UTC()
 	for _, doc := range all {
+		if err := retainSourceObject(ctx, st, source, "document", doc.ID, doc.ID, doc, now); err != nil {
+			return result, err
+		}
+		if err := retainPeople(ctx, st, source, doc.ID, doc.People, now); err != nil {
+			return result, err
+		}
 		note, err := privateapi.NoteFromDocument(doc, now)
 		if err != nil {
 			return result, err
@@ -65,6 +80,9 @@ func syncPrivate(ctx context.Context, client privateapi.Client, st *store.Store,
 			chunks, err := client.GetDocumentTranscript(ctx, doc.ID)
 			if err == nil {
 				for _, chunk := range chunks {
+					if err := retainSourceObject(ctx, st, source, "transcript_chunk", chunk.ID, doc.ID, chunk, now); err != nil {
+						return result, err
+					}
 					modelChunk, err := privateapi.TranscriptToModel(chunk)
 					if err != nil {
 						return result, err
@@ -80,6 +98,9 @@ func syncPrivate(ctx context.Context, client privateapi.Client, st *store.Store,
 			panels, err := client.GetDocumentPanels(ctx, doc.ID)
 			if err == nil {
 				for _, panel := range panels {
+					if err := retainSourceObject(ctx, st, source, "panel", panel.ID, doc.ID, panel, now); err != nil {
+						return result, err
+					}
 					modelPanel, err := privateapi.PanelToModel(panel)
 					if err != nil {
 						return result, err

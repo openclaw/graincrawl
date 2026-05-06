@@ -24,8 +24,8 @@ Commands:
   unlock                  Explain explicit unlock surfaces.
   secrets                 Inspect graincrawl-managed secret state.
   export markdown         Export notes as Markdown.
-  snapshot                Create a portable snapshot placeholder.
-  import                  Import a snapshot placeholder.
+  snapshot create         Create a portable crawlkit snapshot.
+  import <path>           Import a portable crawlkit snapshot.
   tui                     Open the terminal browser placeholder.
   completion              Print shell completion placeholder.
 

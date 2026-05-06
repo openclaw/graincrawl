@@ -16,8 +16,6 @@ func TestAppStatusAndSecurityCommandsUseTempConfig(t *testing.T) {
 		{"--json", "--config", cfgPath, "sources"},
 		{"--json", "--config", cfgPath, "unlock"},
 		{"--json", "--config", cfgPath, "secrets"},
-		{"--json", "--config", cfgPath, "snapshot"},
-		{"--json", "--config", cfgPath, "import"},
 		{"--json", "--config", cfgPath, "tui"},
 		{"--json", "--config", cfgPath, "completion"},
 		{"--json", "--config", cfgPath, "runs"},
@@ -45,6 +43,26 @@ func TestAppStatusAndSecurityCommandsUseTempConfig(t *testing.T) {
 		if !strings.Contains(out.String(), `"schema_version": "crawlkit.control.v1"`) {
 			t.Fatalf("%v did not return crawlkit control JSON: %s", command, out.String())
 		}
+	}
+}
+
+func TestAppSnapshotExportImportUseTempArchive(t *testing.T) {
+	cfgPath := writeTestConfig(t)
+	snapshotDir := filepath.Join(t.TempDir(), "snapshot")
+	var out bytes.Buffer
+	app := App{Stdout: &out}
+	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "snapshot", "create", "--out", snapshotDir}); err != nil {
+		t.Fatalf("snapshot create failed: %v", err)
+	}
+	if !strings.Contains(out.String(), `"manifest"`) {
+		t.Fatalf("snapshot output missing manifest: %s", out.String())
+	}
+	out.Reset()
+	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "import", snapshotDir}); err != nil {
+		t.Fatalf("snapshot import failed: %v", err)
+	}
+	if !strings.Contains(out.String(), `"manifest"`) {
+		t.Fatalf("import output missing manifest: %s", out.String())
 	}
 }
 

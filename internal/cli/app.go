@@ -68,9 +68,9 @@ func (a App) Run(ctx context.Context, args []string) error {
 	case "export":
 		return a.runExport(ctx, stdout, flags, cmdArgs)
 	case "snapshot":
-		return a.runPlaceholder(stdout, flags, "snapshot", "portable snapshots are not implemented yet")
+		return a.runSnapshot(ctx, stdout, flags, cmdArgs)
 	case "import":
-		return a.runPlaceholder(stdout, flags, "import", "snapshot import is not implemented yet")
+		return a.runImport(ctx, stdout, flags, cmdArgs)
 	case "tui":
 		return a.runPlaceholder(stdout, flags, "tui", "terminal browser is not implemented yet")
 	case "completion":

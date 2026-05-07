@@ -48,7 +48,7 @@ jobs:
 
       - name: Checkout tap repository
         if: ${{ env.TAP_UPDATE_ENABLED == '1' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.TAP_REPO }}
           token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

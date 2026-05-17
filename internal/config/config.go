@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	ckconfig "github.com/openclaw/crawlkit/config"
 	"github.com/pelletier/go-toml/v2"
-	ckconfig "github.com/vincentkoc/crawlkit/config"
 )
 
 const (

@@ -7,6 +7,7 @@ Usage:
 
 Commands:
   version                 Show build metadata.
+  check-update            Check for a newer graincrawl release.
   init                    Create config and database directories.
   doctor                  Inspect Granola and graincrawl state.
   metadata                Print crawlkit control metadata.

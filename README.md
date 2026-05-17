@@ -23,8 +23,7 @@ browser over the archived SQLite data.
 ## Install
 
 ```bash
-brew tap vincentkoc/tap
-brew install graincrawl
+brew install openclaw/tap/graincrawl
 ```
 
 From source:
@@ -59,6 +58,7 @@ graincrawl tui --json
 graincrawl version
 graincrawl init
 graincrawl doctor
+graincrawl check-update
 graincrawl metadata
 graincrawl status
 graincrawl sync --source private-api
@@ -97,7 +97,14 @@ source metadata.
 ## Distribution
 
 Releases use GoReleaser for GitHub release assets and Linux packages, plus a
-source-built Homebrew formula in `vincentkoc/tap`.
+source-built Homebrew formula in `openclaw/tap`.
+
+`graincrawl` checks for new GitHub releases at most once every 24 hours during
+interactive CLI use and prints a short upgrade hint when a newer version is
+available. The check is skipped for JSON output, CI, non-terminal stderr, and
+development builds. Run `graincrawl check-update` to check explicitly, or
+disable passive checks with `CRAWLKIT_NO_UPDATE_CHECK=1` or
+`GRAINCRAWL_NO_UPDATE_CHECK=1`.
 
 See [docs/distribution.md](docs/distribution.md).
 

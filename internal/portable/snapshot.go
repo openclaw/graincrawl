@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"time"
 
+	cksnapshot "github.com/openclaw/crawlkit/snapshot"
 	"github.com/openclaw/graincrawl/internal/store"
-	cksnapshot "github.com/vincentkoc/crawlkit/snapshot"
 )
 
 var Tables = []string{

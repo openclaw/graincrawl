@@ -33,9 +33,12 @@ func (a App) Run(ctx context.Context, args []string) error {
 		return err
 	}
 	cmd, cmdArgs := rest[0], rest[1:]
+	a.maybeNotifyRelease(ctx, rest, flags)
 	switch cmd {
 	case "version":
 		return a.runVersion(stdout, flags)
+	case "check-update":
+		return a.runCheckUpdate(ctx, stdout, flags, cmdArgs)
 	case "init":
 		return a.runInit(stdout, flags)
 	case "doctor":

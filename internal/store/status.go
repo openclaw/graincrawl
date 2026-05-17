@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	ckstore "github.com/vincentkoc/crawlkit/store"
+	ckstore "github.com/openclaw/crawlkit/store"
 )
 
 type Status struct {

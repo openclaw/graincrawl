@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/openclaw/crawlkit/control"
 	"github.com/openclaw/graincrawl/internal/config"
 	"github.com/openclaw/graincrawl/internal/output"
 	gruntime "github.com/openclaw/graincrawl/internal/runtime"
 	"github.com/openclaw/graincrawl/internal/store"
-	"github.com/vincentkoc/crawlkit/control"
 )
 
 func (a App) runMetadata(ctx context.Context, w io.Writer, flags GlobalFlags) error {
@@ -44,18 +44,19 @@ func controlManifest(configPath string, cfg config.Config) control.Manifest {
 	}
 	manifest.Capabilities = []string{"metadata", "status", "doctor", "sync", "notes", "sql", "export", "snapshot", "tui"}
 	manifest.Commands = map[string]control.Command{
-		"metadata":    {Title: "Metadata", Argv: []string{"graincrawl", "metadata", "--json"}, JSON: true},
-		"status":      {Title: "Status", Argv: []string{"graincrawl", "status", "--json"}, JSON: true},
-		"doctor":      {Title: "Doctor", Argv: []string{"graincrawl", "doctor", "--json"}, JSON: true},
-		"sync":        {Title: "Sync", Argv: []string{"graincrawl", "sync", "--source", cfg.Granola.PreferredSource, "--json"}, JSON: true, Mutates: true},
-		"notes":       {Title: "Notes", Argv: []string{"graincrawl", "notes", "--json"}, JSON: true},
-		"sql":         {Title: "Read-only SQL", Argv: []string{"graincrawl", "--json", "sql", "select count(*) as notes from notes"}, JSON: true},
-		"tui":         {Title: "TUI", Argv: []string{"graincrawl", "tui"}},
-		"snapshot":    {Title: "Snapshot", Argv: []string{"graincrawl", "snapshot", "create"}, Mutates: true},
-		"export":      {Title: "Markdown Export", Argv: []string{"graincrawl", "export", "markdown", "--out", "./granola-notes"}, Mutates: true},
-		"unlock":      {Title: "Unlock", Argv: []string{"graincrawl", "unlock", "--json"}, JSON: true},
-		"completion":  {Title: "Completion", Argv: []string{"graincrawl", "completion", "zsh"}},
-		"legacy-json": {Title: "Legacy JSON envelope", Argv: []string{"graincrawl", "version", "--json"}, JSON: true, Legacy: true},
+		"metadata":     {Title: "Metadata", Argv: []string{"graincrawl", "metadata", "--json"}, JSON: true},
+		"status":       {Title: "Status", Argv: []string{"graincrawl", "status", "--json"}, JSON: true},
+		"check-update": {Title: "Check for updates", Argv: []string{"graincrawl", "check-update", "--json"}, JSON: true},
+		"doctor":       {Title: "Doctor", Argv: []string{"graincrawl", "doctor", "--json"}, JSON: true},
+		"sync":         {Title: "Sync", Argv: []string{"graincrawl", "sync", "--source", cfg.Granola.PreferredSource, "--json"}, JSON: true, Mutates: true},
+		"notes":        {Title: "Notes", Argv: []string{"graincrawl", "notes", "--json"}, JSON: true},
+		"sql":          {Title: "Read-only SQL", Argv: []string{"graincrawl", "--json", "sql", "select count(*) as notes from notes"}, JSON: true},
+		"tui":          {Title: "TUI", Argv: []string{"graincrawl", "tui"}},
+		"snapshot":     {Title: "Snapshot", Argv: []string{"graincrawl", "snapshot", "create"}, Mutates: true},
+		"export":       {Title: "Markdown Export", Argv: []string{"graincrawl", "export", "markdown", "--out", "./granola-notes"}, Mutates: true},
+		"unlock":       {Title: "Unlock", Argv: []string{"graincrawl", "unlock", "--json"}, JSON: true},
+		"completion":   {Title: "Completion", Argv: []string{"graincrawl", "completion", "zsh"}},
+		"legacy-json":  {Title: "Legacy JSON envelope", Argv: []string{"graincrawl", "version", "--json"}, JSON: true, Legacy: true},
 	}
 	manifest.Privacy = control.Privacy{
 		ContainsPrivateMessages: true,

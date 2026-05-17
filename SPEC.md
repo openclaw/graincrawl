@@ -141,7 +141,7 @@ operator should always know which trust boundary is being crossed.
 - language: Go for the CLI/archive
 - helper language: minimal Electron/Node helper for macOS local encrypted
   surfaces
-- shared library: `github.com/vincentkoc/crawlkit`
+- shared library: `github.com/openclaw/crawlkit`
 - default local app dir: `~/.config/graincrawl`
 
 ## source adapters

@@ -11,6 +11,7 @@ git diff --exit-code -- go.mod go.sum
 GOWORK=off go vet ./...
 GOWORK=off go test -count=1 ./...
 make smoke
+graincrawl check-update --json
 ```
 
 The smoke target uses temp `HOME`, temp XDG dirs, temp config, temp cache, and a
@@ -58,8 +59,8 @@ The release workflow:
 
 ## Optional Variables
 
-- `HOMEBREW_TAP_REPO`: defaults to `vincentkoc/homebrew-tap`, which installs as
-  `brew tap vincentkoc/tap`
+- `HOMEBREW_TAP_REPO`: defaults to `openclaw/homebrew-tap`, which installs as
+  `brew install openclaw/tap/graincrawl`
 - `CODEQL_ENABLED`: set to `true` after code scanning is enabled for the
   repository
 - `CLOUDSMITH_APT_TARGETS`: comma-separated targets like `ubuntu/jammy,debian/trixie`

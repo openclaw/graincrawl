@@ -3,7 +3,9 @@
 ## Unreleased
 
 - Bump routine Go module and GitHub Actions dependencies.
-
+- Add `graincrawl check-update` and passive release notices backed by
+  `crawlkit/releasecheck`.
+- Move documented Homebrew installs to `openclaw/tap`.
 - Add a repo-local `graincrawl` agent skill for local archive, freshness,
   source-unlock, and verification workflows.
 - Add `graincrawl sql` for read-only local archive queries and document

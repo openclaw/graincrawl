@@ -3,8 +3,8 @@ package runtime
 import (
 	"context"
 
-	"github.com/vincentkoc/graincrawl/internal/config"
-	"github.com/vincentkoc/graincrawl/internal/store"
+	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/store"
 )
 
 type Runtime struct {

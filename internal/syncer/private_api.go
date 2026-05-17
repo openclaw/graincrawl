@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vincentkoc/graincrawl/internal/config"
-	"github.com/vincentkoc/graincrawl/internal/granola"
-	"github.com/vincentkoc/graincrawl/internal/model"
-	"github.com/vincentkoc/graincrawl/internal/privateapi"
-	"github.com/vincentkoc/graincrawl/internal/store"
+	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/granola"
+	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/privateapi"
+	"github.com/openclaw/graincrawl/internal/store"
 )
 
 func PrivateAPI(ctx context.Context, cfg config.Config, st *store.Store, opts Options) (Result, error) {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/vincentkoc/graincrawl/internal/model"
-	"github.com/vincentkoc/graincrawl/internal/output"
-	gruntime "github.com/vincentkoc/graincrawl/internal/runtime"
+	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/output"
+	gruntime "github.com/openclaw/graincrawl/internal/runtime"
 )
 
 func (a App) runNotes(ctx context.Context, w io.Writer, flags GlobalFlags, args []string) error {

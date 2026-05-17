@@ -28,85 +28,63 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.event.release.tag_name || inputs.tag_name, 'v')
     env:
-      TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO || 'vincentkoc/homebrew-tap' }}
+      TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO || 'openclaw/homebrew-tap' }}
+      FORMULA: graincrawl
     steps:
-      - name: Validate tap configuration
+      - name: Resolve release tag
+        run: |
+          set -euo pipefail
+          echo "RELEASE_TAG=${{ github.event.release.tag_name || inputs.tag_name }}" >> "$GITHUB_ENV"
+
+      - name: Dispatch tap formula update
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           if [ -z "${GH_TOKEN}" ]; then
-            echo "TAP_UPDATE_ENABLED=0" >> "$GITHUB_ENV"
-            echo "Secret HOMEBREW_TAP_GITHUB_TOKEN is not configured; skipping automated tap update."
-            exit 0
-          fi
-          if [ "$(gh api "repos/${TAP_REPO}" --jq '.permissions.push // false')" != "true" ]; then
-            echo "HOMEBREW_TAP_GITHUB_TOKEN must have push access to ${TAP_REPO}."
+            echo "::error::Set HOMEBREW_TAP_GITHUB_TOKEN with workflow access to ${TAP_REPO}"
             exit 1
           fi
-          echo "TAP_UPDATE_ENABLED=1" >> "$GITHUB_ENV"
 
-      - name: Checkout tap repository
-        if: ${{ env.TAP_UPDATE_ENABLED == '1' }}
-        uses: actions/checkout@v6
-        with:
-          repository: ${{ env.TAP_REPO }}
-          token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
-
-      - name: Update formula
-        if: ${{ env.TAP_UPDATE_ENABLED == '1' }}
-        env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag_name }}
-          SOURCE_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          REVISION="$(gh api "repos/${SOURCE_REPO}/git/ref/tags/${TAG}" --jq '.object.sha')"
-          if [ "$(gh api "repos/${SOURCE_REPO}/git/ref/tags/${TAG}" --jq '.object.type')" = "tag" ]; then
-            REVISION="$(gh api "repos/${SOURCE_REPO}/git/tags/${REVISION}" --jq '.object.sha')"
+          if [ "$(gh api "repos/${TAP_REPO}" --jq '.permissions.push // false')" != "true" ]; then
+            echo "::error::HOMEBREW_TAP_GITHUB_TOKEN must have push access to ${TAP_REPO}."
+            exit 1
           fi
 
-          mkdir -p Formula
-          cat > Formula/graincrawl.rb <<EOF
-          class Graincrawl < Formula
-            desc "Local-first Granola crawler into SQLite and Markdown"
-            homepage "https://github.com/${SOURCE_REPO}"
-            url "https://github.com/${SOURCE_REPO}.git",
-                tag: "${TAG}",
-                revision: "${REVISION}"
-            license "MIT"
-            version "${TAG#v}"
+          request_id="${FORMULA}-${RELEASE_TAG}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          expected_title="Update ${FORMULA} for ${RELEASE_TAG} (${request_id})"
 
-            depends_on "go" => :build
+          gh workflow run update-formula.yml \
+            --repo "${TAP_REPO}" \
+            --ref main \
+            -f formula="${FORMULA}" \
+            -f tag="${RELEASE_TAG}" \
+            -f repository="${GITHUB_REPOSITORY}" \
+            -f artifact_template="{formula}_{version}_{target}.tar.gz" \
+            -f request_id="${request_id}"
 
-            def install
-              ldflags = "-s -w " \
-                        "-X github.com/vincentkoc/graincrawl/internal/buildinfo.Version=#{version}"
-              system "go", "build", *std_go_args(ldflags: ldflags), "./cmd/graincrawl"
-              pkgshare.install "config.example.toml"
-              doc.install "README.md", "LICENSE", "SPEC.md"
-            end
+          run_id=""
+          for _ in {1..30}; do
+            run_id=$(gh run list \
+              --repo "${TAP_REPO}" \
+              --workflow update-formula.yml \
+              --branch main \
+              --event workflow_dispatch \
+              --limit 20 \
+              --json databaseId,displayTitle \
+              --jq ".[] | select(.displayTitle == \"${expected_title}\") | .databaseId" | head -n1)
+            if [ -n "${run_id}" ]; then
+              break
+            fi
+            sleep 5
+          done
 
-            test do
-              assert_match '"version"', shell_output("#{bin}/graincrawl version --json")
-              assert_match "graincrawl archives Granola", shell_output("#{bin}/graincrawl --help")
-            end
-          end
-          EOF
-
-      - name: Commit and push formula update
-        if: ${{ env.TAP_UPDATE_ENABLED == '1' }}
-        env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag_name }}
-        run: |
-          set -euo pipefail
-          git add Formula/graincrawl.rb
-          if git diff --cached --quiet; then
-            echo "No tap changes to commit."
-            exit 0
+          if [ -z "${run_id}" ]; then
+            echo "::error::Could not find tap workflow run with title: ${expected_title}"
+            exit 1
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: update graincrawl formula for ${TAG}"
-          git pull --rebase origin main
-          git push
+
+          gh run watch "${run_id}" \
+            --repo "${TAP_REPO}" \
+            --exit-status \
+            --interval 10

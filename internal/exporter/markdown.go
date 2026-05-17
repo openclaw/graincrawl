@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/vincentkoc/graincrawl/internal/model"
-	"github.com/vincentkoc/graincrawl/internal/store"
+	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/store"
 )
 
 type MarkdownResult struct {

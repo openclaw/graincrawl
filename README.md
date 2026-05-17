@@ -30,7 +30,7 @@ brew install graincrawl
 From source:
 
 ```bash
-go install github.com/vincentkoc/graincrawl/cmd/graincrawl@latest
+go install github.com/openclaw/graincrawl/cmd/graincrawl@latest
 ```
 
 ## Quick Start

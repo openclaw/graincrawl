@@ -135,8 +135,8 @@ operator should always know which trust boundary is being crossed.
 
 ## repository identity
 
-- repo: `github.com/vincentkoc/graincrawl`
-- module: `github.com/vincentkoc/graincrawl`
+- repo: `github.com/openclaw/graincrawl`
+- module: `github.com/openclaw/graincrawl`
 - binary: `graincrawl`
 - language: Go for the CLI/archive
 - helper language: minimal Electron/Node helper for macOS local encrypted
@@ -742,7 +742,7 @@ only the generic process supervisor/temp-copy/redaction mechanics into
 
 ### phase 0: repo bootstrap
 
-- create `github.com/vincentkoc/graincrawl`
+- create `github.com/openclaw/graincrawl`
 - add Go module
 - add `cmd/graincrawl`
 - add README, SPEC, LICENSE, CHANGELOG, CONTRIBUTING

@@ -6,12 +6,12 @@ import (
 	"io"
 	"time"
 
-	"github.com/vincentkoc/graincrawl/internal/buildinfo"
-	"github.com/vincentkoc/graincrawl/internal/config"
-	"github.com/vincentkoc/graincrawl/internal/doctor"
-	"github.com/vincentkoc/graincrawl/internal/output"
-	gruntime "github.com/vincentkoc/graincrawl/internal/runtime"
-	"github.com/vincentkoc/graincrawl/internal/syncer"
+	"github.com/openclaw/graincrawl/internal/buildinfo"
+	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/doctor"
+	"github.com/openclaw/graincrawl/internal/output"
+	gruntime "github.com/openclaw/graincrawl/internal/runtime"
+	"github.com/openclaw/graincrawl/internal/syncer"
 )
 
 type App struct {

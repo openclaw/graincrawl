@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/vincentkoc/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/model"
 )
 
 func (s *Store) UpsertTranscriptChunk(ctx context.Context, chunk model.TranscriptChunk) error {

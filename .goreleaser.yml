@@ -18,9 +18,9 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-        -X github.com/vincentkoc/graincrawl/internal/buildinfo.Version={{ .Version }}
-        -X github.com/vincentkoc/graincrawl/internal/buildinfo.Commit={{ .Commit }}
-        -X github.com/vincentkoc/graincrawl/internal/buildinfo.Date={{ .Date }}
+        -X github.com/openclaw/graincrawl/internal/buildinfo.Version={{ .Version }}
+        -X github.com/openclaw/graincrawl/internal/buildinfo.Commit={{ .Commit }}
+        -X github.com/openclaw/graincrawl/internal/buildinfo.Date={{ .Date }}
 
 archives:
   - id: bundles
@@ -53,7 +53,7 @@ nfpms:
       - graincrawl
     package_name: graincrawl
     file_name_template: "{{ .ConventionalFileName }}"
-    homepage: https://github.com/vincentkoc/graincrawl
+    homepage: https://github.com/openclaw/graincrawl
     maintainer: Vincent Koc <vincent@vincentkoc.com>
     description: Local-first Granola crawler into SQLite and Markdown.
     license: MIT

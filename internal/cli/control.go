@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/output"
+	gruntime "github.com/openclaw/graincrawl/internal/runtime"
+	"github.com/openclaw/graincrawl/internal/store"
 	"github.com/vincentkoc/crawlkit/control"
-	"github.com/vincentkoc/graincrawl/internal/config"
-	"github.com/vincentkoc/graincrawl/internal/output"
-	gruntime "github.com/vincentkoc/graincrawl/internal/runtime"
-	"github.com/vincentkoc/graincrawl/internal/store"
 )
 
 func (a App) runMetadata(ctx context.Context, w io.Writer, flags GlobalFlags) error {

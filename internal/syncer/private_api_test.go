@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/vincentkoc/graincrawl/internal/model"
-	"github.com/vincentkoc/graincrawl/internal/privateapi"
-	"github.com/vincentkoc/graincrawl/internal/store"
+	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/privateapi"
+	"github.com/openclaw/graincrawl/internal/store"
 )
 
 func TestSyncPrivateHydratesDocumentBodyBeforeUpsert(t *testing.T) {

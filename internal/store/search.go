@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/vincentkoc/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/model"
 )
 
 func (s *Store) SearchNotes(ctx context.Context, query string, limit int) ([]model.Note, error) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vincentkoc/graincrawl/internal/config"
-	"github.com/vincentkoc/graincrawl/internal/model"
-	"github.com/vincentkoc/graincrawl/internal/store"
+	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/store"
 )
 
 func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) (Result, error) {

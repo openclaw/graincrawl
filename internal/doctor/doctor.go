@@ -4,8 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/vincentkoc/graincrawl/internal/config"
-	"github.com/vincentkoc/graincrawl/internal/granola"
+	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/granola"
 )
 
 type Report struct {

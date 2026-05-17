@@ -4,9 +4,9 @@ VERSION ?= 0.0.0-dev
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS := -s -w \
-	-X github.com/vincentkoc/graincrawl/internal/buildinfo.Version=$(VERSION) \
-	-X github.com/vincentkoc/graincrawl/internal/buildinfo.Commit=$(COMMIT) \
-	-X github.com/vincentkoc/graincrawl/internal/buildinfo.Date=$(DATE)
+	-X github.com/openclaw/graincrawl/internal/buildinfo.Version=$(VERSION) \
+	-X github.com/openclaw/graincrawl/internal/buildinfo.Commit=$(COMMIT) \
+	-X github.com/openclaw/graincrawl/internal/buildinfo.Date=$(DATE)
 
 test:
 	GOWORK=off go test -count=1 ./...

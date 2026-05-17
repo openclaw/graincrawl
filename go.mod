@@ -1,4 +1,4 @@
-module github.com/vincentkoc/graincrawl
+module github.com/openclaw/graincrawl
 
 go 1.26.2
 

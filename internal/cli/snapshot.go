@@ -6,9 +6,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/vincentkoc/graincrawl/internal/output"
-	"github.com/vincentkoc/graincrawl/internal/portable"
-	gruntime "github.com/vincentkoc/graincrawl/internal/runtime"
+	"github.com/openclaw/graincrawl/internal/output"
+	"github.com/openclaw/graincrawl/internal/portable"
+	gruntime "github.com/openclaw/graincrawl/internal/runtime"
 )
 
 func (a App) runSnapshot(ctx context.Context, w io.Writer, flags GlobalFlags, args []string) error {

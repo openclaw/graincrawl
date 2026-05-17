@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vincentkoc/graincrawl/internal/cli"
+	"github.com/openclaw/graincrawl/internal/cli"
 )
 
 func main() {

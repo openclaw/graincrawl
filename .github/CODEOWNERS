@@ -1,13 +1,13 @@
 # Protect ownership and automation rules.
-/.github/CODEOWNERS @vincentkoc
-/.github/dependabot.yml @vincentkoc
-/.github/release-drafter.yml @vincentkoc
-/.github/workflows/ @vincentkoc
-/.agents/skills/ @vincentkoc
+/.github/CODEOWNERS @openclaw/openclaw-secops
+/.github/dependabot.yml @openclaw/openclaw-secops
+/.github/release-drafter.yml @openclaw/openclaw-secops
+/.github/workflows/ @openclaw/openclaw-secops
+/.agents/skills/ @openclaw/openclaw-secops
 
 # Release and package integrity surfaces.
-/.goreleaser.yml @vincentkoc
-/go.mod @vincentkoc
-/go.sum @vincentkoc
-/scripts/*release* @vincentkoc
-/scripts/*publish* @vincentkoc
+/.goreleaser.yml @openclaw/openclaw-secops
+/go.mod @openclaw/openclaw-secops
+/go.sum @openclaw/openclaw-secops
+/scripts/*release* @openclaw/openclaw-secops
+/scripts/*publish* @openclaw/openclaw-secops

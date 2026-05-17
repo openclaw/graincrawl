@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/vincentkoc/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/model"
 )
 
 type SourceObject struct {

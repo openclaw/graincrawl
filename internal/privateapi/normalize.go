@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vincentkoc/graincrawl/internal/hashutil"
-	"github.com/vincentkoc/graincrawl/internal/model"
-	"github.com/vincentkoc/graincrawl/internal/timeutil"
+	"github.com/openclaw/graincrawl/internal/hashutil"
+	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/timeutil"
 )
 
 func NoteFromDocument(doc Document, now time.Time) (model.Note, error) {

@@ -1,8 +1,8 @@
 package security
 
 import (
-	"github.com/vincentkoc/graincrawl/internal/config"
-	"github.com/vincentkoc/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/model"
 )
 
 type SourceSupport struct {

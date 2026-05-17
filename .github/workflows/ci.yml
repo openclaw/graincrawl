@@ -88,7 +88,7 @@ jobs:
       - name: Build CLI
         run: |
           GOWORK=off go build -trimpath \
-            -ldflags "-s -w -X github.com/vincentkoc/graincrawl/internal/buildinfo.Version=ci -X github.com/vincentkoc/graincrawl/internal/buildinfo.Commit=${GITHUB_SHA} -X github.com/vincentkoc/graincrawl/internal/buildinfo.Date=ci" \
+            -ldflags "-s -w -X github.com/openclaw/graincrawl/internal/buildinfo.Version=ci -X github.com/openclaw/graincrawl/internal/buildinfo.Commit=${GITHUB_SHA} -X github.com/openclaw/graincrawl/internal/buildinfo.Date=ci" \
             -o bin/graincrawl ./cmd/graincrawl
 
       - name: Smoke test CLI control surface

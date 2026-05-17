@@ -1,6 +1,6 @@
 package syncer
 
-import "github.com/vincentkoc/graincrawl/internal/model"
+import "github.com/openclaw/graincrawl/internal/model"
 
 type Options struct {
 	Source             model.Source `json:"source"`

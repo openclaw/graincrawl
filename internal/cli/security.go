@@ -4,9 +4,9 @@ import (
 	"context"
 	"io"
 
-	"github.com/vincentkoc/graincrawl/internal/output"
-	gruntime "github.com/vincentkoc/graincrawl/internal/runtime"
-	"github.com/vincentkoc/graincrawl/internal/security"
+	"github.com/openclaw/graincrawl/internal/output"
+	gruntime "github.com/openclaw/graincrawl/internal/runtime"
+	"github.com/openclaw/graincrawl/internal/security"
 )
 
 func (a App) runSources(ctx context.Context, w io.Writer, flags GlobalFlags) error {

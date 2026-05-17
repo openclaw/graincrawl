@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vincentkoc/graincrawl/internal/hashutil"
-	"github.com/vincentkoc/graincrawl/internal/model"
-	"github.com/vincentkoc/graincrawl/internal/store"
+	"github.com/openclaw/graincrawl/internal/hashutil"
+	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/store"
 )
 
 func retainSourceObject(ctx context.Context, st *store.Store, source model.Source, kind, sourceID, documentID string, payload any, observed time.Time) error {

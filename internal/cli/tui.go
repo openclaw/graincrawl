@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/openclaw/graincrawl/internal/model"
+	gruntime "github.com/openclaw/graincrawl/internal/runtime"
 	cktui "github.com/vincentkoc/crawlkit/tui"
-	"github.com/vincentkoc/graincrawl/internal/model"
-	gruntime "github.com/vincentkoc/graincrawl/internal/runtime"
 )
 
 func (a App) runTUI(ctx context.Context, w io.Writer, flags GlobalFlags, args []string) error {

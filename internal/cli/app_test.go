@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vincentkoc/graincrawl/internal/config"
-	"github.com/vincentkoc/graincrawl/internal/model"
-	"github.com/vincentkoc/graincrawl/internal/store"
+	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/store"
 )
 
 func TestAppStatusAndSecurityCommandsUseTempConfig(t *testing.T) {

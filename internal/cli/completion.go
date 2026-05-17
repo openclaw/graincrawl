@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/vincentkoc/graincrawl/internal/output"
+	"github.com/openclaw/graincrawl/internal/output"
 )
 
 var completionCommands = []string{

@@ -3,8 +3,8 @@ package cli
 import (
 	"strconv"
 
-	"github.com/vincentkoc/graincrawl/internal/model"
-	"github.com/vincentkoc/graincrawl/internal/syncer"
+	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/syncer"
 )
 
 func parseSyncOptions(args []string) syncer.Options {

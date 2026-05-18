@@ -2,6 +2,7 @@ package syncer
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -53,5 +54,88 @@ func TestRunHonorsSkipTranscriptsForDesktopCache(t *testing.T) {
 	}
 	if status.Notes != 1 || status.Transcripts != 0 {
 		t.Fatalf("expected archived note without transcript, got %#v", status)
+	}
+}
+
+func TestRunAcceptsEmptyVersion8DesktopCache(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	profile := filepath.Join(root, "Granola")
+	if err := os.MkdirAll(profile, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	raw := `{"cache":{"version":8,"state":{"transcripts":{}}}}`
+	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(raw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	cfg := config.Config{
+		Granola: config.GranolaConfig{
+			ProfilePath:       profile,
+			AllowDesktopCache: true,
+		},
+		Sync: config.SyncConfig{
+			DefaultLimit:       100,
+			IncludeTranscripts: true,
+		},
+	}
+	result, err := Run(ctx, cfg, st, Options{Source: model.SourceDesktopCache})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Notes != 0 || result.Transcripts != 0 || result.Source != model.SourceDesktopCache {
+		t.Fatalf("expected empty desktop-cache sync, got %#v", result)
+	}
+	status, err := st.Status(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.SyncRuns != 1 || status.Notes != 0 || status.Transcripts != 0 {
+		t.Fatalf("expected empty sync run to be recorded, got %#v", status)
+	}
+}
+
+func TestRunFallsBackToDesktopCacheForImplicitExpiredPrivateAPI(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	profile := filepath.Join(root, "Granola")
+	if err := os.MkdirAll(profile, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	cacheRaw := `{"cache":{"version":8,"state":{"transcripts":{}}}}`
+	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(cacheRaw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	supabaseRaw := `{"workos_tokens":"{\"access_token\":\"expired\",\"obtained_at\":0,\"expires_in\":1}"}`
+	if err := os.WriteFile(filepath.Join(profile, "supabase.json"), []byte(supabaseRaw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	cfg := config.Config{
+		Granola: config.GranolaConfig{
+			ProfilePath:       profile,
+			PreferredSource:   "private-api",
+			AllowPrivateAPI:   true,
+			AllowDesktopCache: true,
+		},
+		Sync: config.SyncConfig{DefaultLimit: 100},
+	}
+	result, err := Run(ctx, cfg, st, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Source != model.SourceDesktopCache || result.Notes != 0 || result.Transcripts != 0 {
+		t.Fatalf("expected implicit expired private-api to fall back to empty desktop-cache, got %#v", result)
+	}
+	if _, err := Run(ctx, cfg, st, Options{Source: model.SourcePrivateAPI}); !errors.Is(err, ErrPrivateAPITokenExpired) {
+		t.Fatalf("explicit private-api should still fail with token expiry, got %v", err)
 	}
 }

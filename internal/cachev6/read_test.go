@@ -29,3 +29,22 @@ func TestReadSummarizeAndNormalize(t *testing.T) {
 		t.Fatalf("bad note: %#v", note)
 	}
 }
+
+func TestReadAcceptsEmptyVersion8Cache(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "cache-v6.json")
+	raw := `{"cache":{"version":8,"state":{"transcripts":{}}}}`
+	if err := os.WriteFile(path, []byte(raw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	file, err := Read(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	summary := Summarize(file)
+	if summary.Version != 8 || summary.DocumentCount != 0 || summary.TranscriptDocs != 0 || summary.MeetingMetaCount != 0 {
+		t.Fatalf("bad empty v8 summary: %#v", summary)
+	}
+	if file.Cache.State.Documents == nil || file.Cache.State.Transcripts == nil || file.Cache.State.MeetingsMetadata == nil {
+		t.Fatalf("expected empty maps to be initialized: %#v", file.Cache.State)
+	}
+}

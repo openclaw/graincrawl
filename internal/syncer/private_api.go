@@ -2,7 +2,7 @@ package syncer
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/openclaw/graincrawl/internal/config"
@@ -10,6 +10,11 @@ import (
 	"github.com/openclaw/graincrawl/internal/model"
 	"github.com/openclaw/graincrawl/internal/privateapi"
 	"github.com/openclaw/graincrawl/internal/store"
+)
+
+var (
+	ErrPrivateAPITokenNotFound = errors.New("Granola access token not found")
+	ErrPrivateAPITokenExpired  = errors.New("Granola access token expired; open Granola or use an explicit refresh flow")
 )
 
 func PrivateAPI(ctx context.Context, cfg config.Config, st *store.Store, opts Options) (Result, error) {
@@ -20,10 +25,10 @@ func PrivateAPI(ctx context.Context, cfg config.Config, st *store.Store, opts Op
 	}
 	summary := granola.SummarizeToken(tokens, time.Now())
 	if !summary.Present {
-		return Result{}, fmt.Errorf("Granola access token not found")
+		return Result{}, ErrPrivateAPITokenNotFound
 	}
 	if summary.Expired {
-		return Result{}, fmt.Errorf("Granola access token expired; open Granola or use an explicit refresh flow")
+		return Result{}, ErrPrivateAPITokenExpired
 	}
 	workspace := user.ActiveWorkspaceID
 	if workspace == "" && len(user.WorkspaceIDs) > 0 {

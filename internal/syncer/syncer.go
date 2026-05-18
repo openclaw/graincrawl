@@ -2,6 +2,7 @@ package syncer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/openclaw/graincrawl/internal/config"
@@ -10,6 +11,7 @@ import (
 )
 
 func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) (Result, error) {
+	sourceExplicit := opts.Source != ""
 	if opts.Source == "" {
 		opts.Source = model.Source(cfg.Granola.PreferredSource)
 	}
@@ -23,7 +25,12 @@ func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) 
 		if !cfg.Granola.AllowPrivateAPI {
 			return Result{}, fmt.Errorf("private-api source disabled in config")
 		}
-		return PrivateAPI(ctx, cfg, st, opts)
+		result, err := PrivateAPI(ctx, cfg, st, opts)
+		if err != nil && !sourceExplicit && cfg.Granola.AllowDesktopCache && privateAPIAuthUnavailable(err) {
+			opts.Source = model.SourceDesktopCache
+			return DesktopCache(ctx, cfg, st, opts)
+		}
+		return result, err
 	case model.SourceDesktopCache:
 		if !cfg.Granola.AllowDesktopCache {
 			return Result{}, fmt.Errorf("desktop-cache source disabled in config")
@@ -32,4 +39,8 @@ func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) 
 	default:
 		return Result{}, fmt.Errorf("source %q is disabled or unsupported in this build", opts.Source)
 	}
+}
+
+func privateAPIAuthUnavailable(err error) bool {
+	return errors.Is(err, ErrPrivateAPITokenNotFound) || errors.Is(err, ErrPrivateAPITokenExpired)
 }

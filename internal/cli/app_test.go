@@ -55,6 +55,15 @@ func TestAppStatusAndSecurityCommandsUseTempConfig(t *testing.T) {
 			t.Fatalf("%v did not return crawlkit control JSON: %s", command, out.String())
 		}
 	}
+	var metadataOut bytes.Buffer
+	metadataApp := App{Stdout: &metadataOut}
+	if err := metadataApp.Run(context.Background(), []string{"--json", "--config", cfgPath, "metadata"}); err != nil {
+		t.Fatalf("metadata failed: %v", err)
+	}
+	if !strings.Contains(metadataOut.String(), `"desktop-cache-import"`) ||
+		!strings.Contains(metadataOut.String(), `"desktop-cache"`) {
+		t.Fatalf("metadata did not expose desktop cache import: %s", metadataOut.String())
+	}
 }
 
 func TestAppGlobalVersionFlag(t *testing.T) {

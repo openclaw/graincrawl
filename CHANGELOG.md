@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1 - 2026-05-18
+
+- Accept plaintext Granola cache version 8 for desktop-cache sync, including
+  empty local caches with no recordings or documents.
+- Expose an explicit desktop-cache import command in crawlkit metadata.
+
 ## v0.2.0 - 2026-05-18
 
 - Preserve explicit `sync --no-transcripts` and `--no-panels` opt-outs when

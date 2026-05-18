@@ -16,8 +16,8 @@ func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) 
 	if opts.Limit == 0 {
 		opts.Limit = cfg.Sync.DefaultLimit
 	}
-	opts.IncludeTranscripts = opts.IncludeTranscripts || cfg.Sync.IncludeTranscripts
-	opts.IncludePanels = opts.IncludePanels || cfg.Sync.IncludePanels
+	opts.IncludeTranscripts = !opts.SkipTranscripts && (opts.IncludeTranscripts || cfg.Sync.IncludeTranscripts)
+	opts.IncludePanels = !opts.SkipPanels && (opts.IncludePanels || cfg.Sync.IncludePanels)
 	switch opts.Source {
 	case model.SourcePrivateAPI:
 		if !cfg.Granola.AllowPrivateAPI {

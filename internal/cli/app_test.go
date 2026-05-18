@@ -208,6 +208,16 @@ func TestAppRejectsUnknownCommand(t *testing.T) {
 	}
 }
 
+func TestParseSyncOptionsKeepsSkipFlags(t *testing.T) {
+	opts := parseSyncOptions([]string{"--source", "desktop-cache", "--limit", "2", "--no-transcripts", "--no-panels"})
+	if opts.Source != model.SourceDesktopCache || opts.Limit != 2 {
+		t.Fatalf("bad source or limit: %#v", opts)
+	}
+	if !opts.SkipTranscripts || !opts.SkipPanels {
+		t.Fatalf("expected skip flags, got %#v", opts)
+	}
+}
+
 func writeTestConfig(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()

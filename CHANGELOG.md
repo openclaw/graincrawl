@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Preserve explicit `sync --no-transcripts` and `--no-panels` opt-outs when
+  config defaults enable those archive sections.
 - Bump routine Go module and GitHub Actions dependencies.
 - Add `graincrawl check-update` and passive release notices backed by
   `crawlkit/releasecheck`.

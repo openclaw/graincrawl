@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.0 - 2026-05-18
 
 - Preserve explicit `sync --no-transcripts` and `--no-panels` opt-outs when
   config defaults enable those archive sections.

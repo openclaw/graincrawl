@@ -10,7 +10,6 @@ import (
 	"github.com/openclaw/crawlkit/control"
 	"github.com/openclaw/graincrawl/internal/config"
 	"github.com/openclaw/graincrawl/internal/output"
-	gruntime "github.com/openclaw/graincrawl/internal/runtime"
 	"github.com/openclaw/graincrawl/internal/store"
 )
 
@@ -100,17 +99,4 @@ func fileSize(path string) int64 {
 		return 0
 	}
 	return info.Size()
-}
-
-func openRuntimeStatus(ctx context.Context, configPath string) (gruntime.Runtime, store.Status, error) {
-	rt, err := gruntime.Open(ctx, configPath)
-	if err != nil {
-		return gruntime.Runtime{}, store.Status{}, err
-	}
-	status, err := rt.Store.Status(ctx)
-	if err != nil {
-		_ = rt.Close()
-		return gruntime.Runtime{}, store.Status{}, err
-	}
-	return rt, status, nil
 }

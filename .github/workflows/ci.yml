@@ -73,7 +73,13 @@ jobs:
         run: GOWORK=off go install golang.org/x/tools/cmd/deadcode@v0.45.0
 
       - name: Deadcode
-        run: GOWORK=off "$(go env GOPATH)/bin/deadcode" -test ./...
+        run: |
+          output_file=$(mktemp)
+          GOWORK=off "$(go env GOPATH)/bin/deadcode" -test ./... > "$output_file"
+          if [ -s "$output_file" ]; then
+            cat "$output_file"
+            exit 1
+          fi
 
   test:
     runs-on: ubuntu-latest

@@ -27,10 +27,3 @@ func Key(key string) bool {
 	}
 	return false
 }
-
-func String(value string) string {
-	if value == "" {
-		return ""
-	}
-	return Mask
-}

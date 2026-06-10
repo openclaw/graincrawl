@@ -112,6 +112,9 @@ func (a App) runSync(ctx context.Context, w io.Writer, flags GlobalFlags, args [
 	output.PrintKV(w, "notes", result.Notes)
 	output.PrintKV(w, "transcripts", result.Transcripts)
 	output.PrintKV(w, "panels", result.Panels)
+	if result.Message != "" {
+		output.PrintKV(w, "message", result.Message)
+	}
 	return nil
 }
 
@@ -179,6 +182,9 @@ func (a App) runDoctor(ctx context.Context, w io.Writer, flags GlobalFlags) erro
 	output.PrintKV(w, "granola_version", report.GranolaApp.Version)
 	output.PrintKV(w, "cache_v6", report.Files.CacheV6.Exists)
 	output.PrintKV(w, "supabase", report.Files.Supabase.Exists)
+	for _, diagnostic := range report.Diagnostics {
+		output.PrintKV(w, "diagnostic", diagnostic.Message)
+	}
 	output.PrintKV(w, "opfs_present", report.Unlock.OPFSPresent)
 	output.PrintKV(w, "keychain_may_prompt", report.Unlock.KeychainMayPrompt)
 	return nil

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -74,6 +75,55 @@ func TestAppGlobalVersionFlag(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "version") {
 		t.Fatalf("--version output missing version: %s", out.String())
+	}
+}
+
+func TestAppReportsEncryptedOnlyGranolaState(t *testing.T) {
+	cfgPath := writeTestConfig(t)
+	cfg, _, err := config.Load(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(cfg.Granola.ProfilePath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	cacheRaw := `{"cache":{"version":8,"state":{"transcripts":{}}}}`
+	if err := os.WriteFile(filepath.Join(cfg.Granola.ProfilePath, "cache-v6.json"), []byte(cacheRaw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"supabase.json.enc", "storage.dek"} {
+		if err := os.WriteFile(filepath.Join(cfg.Granola.ProfilePath, name), []byte("encrypted"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, command := range [][]string{
+		{"--json", "--config", cfgPath, "doctor"},
+		{"--config", cfgPath, "doctor"},
+		{"--json", "--config", cfgPath, "sync"},
+		{"--json", "--config", cfgPath, "sync", "--source", "desktop-cache"},
+		{"--config", cfgPath, "sync", "--source", "desktop-cache"},
+	} {
+		var out bytes.Buffer
+		app := App{Stdout: &out}
+		if err := app.Run(context.Background(), command); err != nil {
+			t.Fatalf("%v failed: %v", command, err)
+		}
+		text := out.String()
+		for _, want := range []string{"encrypted-only", "not implemented", "supabase.json"} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("%v output missing %q:\n%s", command, want, text)
+			}
+		}
+	}
+
+	var unlockOut bytes.Buffer
+	app := App{Stdout: &unlockOut}
+	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "unlock"}); err != nil {
+		t.Fatalf("unlock failed: %v", err)
+	}
+	if !strings.Contains(unlockOut.String(), "not implemented") {
+		t.Fatalf("unlock output should not imply implemented encrypted unlock:\n%s", unlockOut.String())
 	}
 }
 

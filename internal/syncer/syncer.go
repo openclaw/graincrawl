@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/granola"
 	"github.com/openclaw/graincrawl/internal/model"
 	"github.com/openclaw/graincrawl/internal/store"
 )
@@ -24,6 +25,14 @@ func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) 
 	case model.SourcePrivateAPI:
 		if !cfg.Granola.AllowPrivateAPI {
 			return Result{}, fmt.Errorf("private-api source disabled in config")
+		}
+		encryptedSupabase := granola.EncryptedSupabaseState(granola.Paths(cfg.Granola.ProfilePath, cfg.Granola.AppPath))
+		if encryptedSupabase && !sourceExplicit && cfg.Granola.AllowDesktopCache {
+			opts.Source = model.SourceDesktopCache
+			return DesktopCache(ctx, cfg, st, opts)
+		}
+		if encryptedSupabase {
+			return Result{Source: model.SourcePrivateAPI, Message: granola.EncryptedOnlyStateMessage}, fmt.Errorf("private-api source requires plaintext supabase.json: %s", granola.EncryptedOnlyStateMessage)
 		}
 		result, err := PrivateAPI(ctx, cfg, st, opts)
 		if err != nil && !sourceExplicit && cfg.Granola.AllowDesktopCache && privateAPIAuthUnavailable(err) {

@@ -2,6 +2,7 @@ package syncer
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/openclaw/graincrawl/internal/cachev6"
@@ -16,8 +17,19 @@ func DesktopCache(ctx context.Context, cfg config.Config, st *store.Store, opts 
 	started := time.Now().UTC()
 	result := Result{Source: source}
 	paths := granola.Paths(cfg.Granola.ProfilePath, cfg.Granola.AppPath)
+	encryptedOnlyMessage := ""
+	if granola.EncryptedOnlyState(paths) {
+		encryptedOnlyMessage = granola.EncryptedOnlyStateMessage
+	}
+	if granola.EncryptedCacheState(paths) {
+		result.Message = encryptedOnlyMessage
+		return result, fmt.Errorf("desktop-cache source requires plaintext cache-v6.json: %s", encryptedOnlyMessage)
+	}
 	file, err := cachev6.Read(paths.CacheV6)
 	if err != nil {
+		if encryptedOnlyMessage != "" {
+			return result, fmt.Errorf("%w: %s", err, encryptedOnlyMessage)
+		}
 		return result, err
 	}
 	now := time.Now().UTC()
@@ -57,7 +69,10 @@ func DesktopCache(ctx context.Context, cfg config.Config, st *store.Store, opts 
 			}
 		}
 	}
+	if encryptedOnlyMessage != "" {
+		result.Message = encryptedOnlyMessage
+	}
 	completed := time.Now().UTC()
-	_, _ = st.InsertSyncRun(ctx, model.SyncRun{Source: source, StartedAt: started, CompletedAt: completed, Status: "ok", Notes: result.Notes, Transcripts: result.Transcripts, Panels: result.Panels})
+	_, _ = st.InsertSyncRun(ctx, model.SyncRun{Source: source, StartedAt: started, CompletedAt: completed, Status: "ok", Notes: result.Notes, Transcripts: result.Transcripts, Panels: result.Panels, Message: result.Message})
 	return result, nil
 }

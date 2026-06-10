@@ -2,6 +2,8 @@ package granola
 
 import "os"
 
+const EncryptedOnlyStateMessage = "Granola desktop state is encrypted-only; encrypted-json unlock/import is not implemented in this version; re-signing into Granola desktop will not fix this unless it emits plaintext supabase.json/cache-v6.json."
+
 type FileState struct {
 	Path    string `json:"path"`
 	Exists  bool   `json:"exists"`
@@ -31,4 +33,16 @@ func EncryptedNewer(plain, encrypted string) bool {
 		return true
 	}
 	return e.ModTime().After(p.ModTime())
+}
+
+func EncryptedOnlyState(paths ProfilePaths) bool {
+	return EncryptedCacheState(paths) || EncryptedSupabaseState(paths)
+}
+
+func EncryptedCacheState(paths ProfilePaths) bool {
+	return EncryptedNewer(paths.CacheV6, paths.CacheV6Encrypted)
+}
+
+func EncryptedSupabaseState(paths ProfilePaths) bool {
+	return EncryptedNewer(paths.Supabase, paths.SupabaseEncrypted)
 }

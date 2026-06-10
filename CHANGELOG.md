@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add a clear diagnostic when Granola desktop exposes encrypted-only state, thanks @elijahmuraoka.
+
 ## v0.2.1 - 2026-05-18
 
 - Accept plaintext Granola cache version 8 for desktop-cache sync, including

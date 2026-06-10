@@ -52,14 +52,14 @@ func Sources(cfg config.Config) []SourceSupport {
 			Allowed:     cfg.Granola.AllowEncryptedJSON,
 			Implemented: false,
 			NeedsSecret: true,
-			Notes:       "requires explicit companion/keychain unlock",
+			Notes:       "unsupported in this build; encrypted-only Granola state requires future explicit unlock/import",
 		},
 		{
 			Source:      model.SourceOPFS,
 			Allowed:     cfg.Granola.AllowOPFS,
 			Implemented: false,
 			NeedsSecret: true,
-			Notes:       "requires explicit companion/keychain unlock",
+			Notes:       "unsupported in this build; future explicit unlock/import must be security reviewed",
 		},
 		{
 			Source:      model.SourcePublicAPI,
@@ -97,10 +97,7 @@ func Secrets(cfg config.Config) SecretReport {
 
 func unlockMessage(needsCompanion bool, mode string) string {
 	if !needsCompanion {
-		return "encrypted JSON and OPFS sources are disabled; no keychain prompt is expected"
+		return "encrypted JSON and OPFS sources are disabled; encrypted-json unlock/import is not implemented in this version, and no keychain prompt is expected"
 	}
-	if mode == "ask" || mode == "always" {
-		return "encrypted sources are enabled and may trigger an explicit keychain prompt through a companion helper"
-	}
-	return "encrypted sources are enabled but keychain prompting is disabled until keychain_prompt_mode is changed"
+	return "encrypted local sources are configured, but encrypted-json/OPFS unlock/import is not implemented in this version; no companion helper or keychain prompt will run"
 }

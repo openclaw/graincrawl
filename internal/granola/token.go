@@ -39,11 +39,15 @@ type TokenSummary struct {
 }
 
 func ReadSupabase(path string) (SupabaseFile, WorkOSTokens, UserInfo, error) {
-	var file SupabaseFile
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return file, WorkOSTokens{}, UserInfo{}, err
+		return SupabaseFile{}, WorkOSTokens{}, UserInfo{}, err
 	}
+	return ParseSupabase(b)
+}
+
+func ParseSupabase(b []byte) (SupabaseFile, WorkOSTokens, UserInfo, error) {
+	var file SupabaseFile
 	if err := json.Unmarshal(b, &file); err != nil {
 		return file, WorkOSTokens{}, UserInfo{}, err
 	}

@@ -48,11 +48,15 @@ _graincrawl_completions()
   prev="${COMP_WORDS[COMP_CWORD-1]}"
   commands="%s"
   global_flags="--json --config --help -h"
-  sources="private-api desktop-cache public-api companion-cli encrypted-json opfs"
+  sources="private-api desktop-cache public-api companion-cli opfs"
 
   case "${prev}" in
     --source)
       COMPREPLY=( $(compgen -W "${sources}" -- "${cur}") )
+      return 0
+      ;;
+    --unlock)
+      COMPREPLY=( $(compgen -W "encrypted-json" -- "${cur}") )
       return 0
       ;;
     completion)
@@ -66,7 +70,7 @@ _graincrawl_completions()
     return 0
   fi
 
-  COMPREPLY=( $(compgen -W "${global_flags} --source --limit --out --no-transcripts --no-panels" -- "${cur}") )
+  COMPREPLY=( $(compgen -W "${global_flags} --source --limit --unlock --out --no-transcripts --no-panels" -- "${cur}") )
 }
 complete -F _graincrawl_completions graincrawl
 `, commands)
@@ -91,7 +95,7 @@ _graincrawl() {
     args)
       case $words[2] in
         sync|refresh)
-          _arguments '--source[source adapter]:(private-api desktop-cache public-api companion-cli encrypted-json opfs)' '--limit[limit]:limit:' '--no-transcripts[skip transcripts]' '--no-panels[skip panels]'
+          _arguments '--source[source adapter]:(private-api desktop-cache public-api companion-cli opfs)' '--limit[limit]:limit:' '--unlock[explicit unlock surface]:(encrypted-json)' '--no-transcripts[skip transcripts]' '--no-panels[skip panels]'
           ;;
         export|snapshot)
           _arguments '--out[output directory]:directory:_files -/'

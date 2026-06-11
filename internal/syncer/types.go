@@ -1,14 +1,19 @@
 package syncer
 
-import "github.com/openclaw/graincrawl/internal/model"
+import (
+	"github.com/openclaw/graincrawl/internal/encryptedjson"
+	"github.com/openclaw/graincrawl/internal/model"
+)
 
 type Options struct {
-	Source             model.Source `json:"source"`
-	Limit              int          `json:"limit"`
-	IncludeTranscripts bool         `json:"include_transcripts"`
-	IncludePanels      bool         `json:"include_panels"`
-	SkipTranscripts    bool         `json:"-"`
-	SkipPanels         bool         `json:"-"`
+	Source               model.Source              `json:"source"`
+	Limit                int                       `json:"limit"`
+	IncludeTranscripts   bool                      `json:"include_transcripts"`
+	IncludePanels        bool                      `json:"include_panels"`
+	SkipTranscripts      bool                      `json:"-"`
+	SkipPanels           bool                      `json:"-"`
+	UnlockSurface        string                    `json:"-"`
+	DecryptEncryptedJSON encryptedjson.DecryptFunc `json:"-"`
 }
 
 type Result struct {

@@ -2,7 +2,7 @@ package granola
 
 import "os"
 
-const EncryptedOnlyStateMessage = "Granola desktop state is encrypted-only; encrypted-json unlock/import is not implemented in this version; re-signing into Granola desktop will not fix this unless it emits plaintext supabase.json/cache-v6.json."
+const EncryptedOnlyStateMessage = "Granola desktop state is encrypted-only; rerun with explicit encrypted-json unlock enabled to read newer cache-v6.json.enc or supabase.json.enc, or use a current plaintext source."
 
 type FileState struct {
 	Path    string `json:"path"`

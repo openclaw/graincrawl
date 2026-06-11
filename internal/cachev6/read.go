@@ -16,6 +16,10 @@ func Read(path string) (File, error) {
 	if err != nil {
 		return File{}, err
 	}
+	return Parse(b)
+}
+
+func Parse(b []byte) (File, error) {
 	var file File
 	if err := json.Unmarshal(b, &file); err != nil {
 		return File{}, err

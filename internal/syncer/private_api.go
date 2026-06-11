@@ -23,6 +23,18 @@ func PrivateAPI(ctx context.Context, cfg config.Config, st *store.Store, opts Op
 	if err != nil {
 		return Result{}, err
 	}
+	return privateAPIWithSession(ctx, cfg, st, opts, tokens, user, "")
+}
+
+func privateAPIFromEncryptedSupabase(ctx context.Context, cfg config.Config, st *store.Store, opts Options, raw []byte) (Result, error) {
+	_, tokens, user, err := granola.ParseSupabase(raw)
+	if err != nil {
+		return Result{}, err
+	}
+	return privateAPIWithSession(ctx, cfg, st, opts, tokens, user, "used encrypted supabase.json credentials in memory")
+}
+
+func privateAPIWithSession(ctx context.Context, cfg config.Config, st *store.Store, opts Options, tokens granola.WorkOSTokens, user granola.UserInfo, message string) (Result, error) {
 	summary := granola.SummarizeToken(tokens, time.Now())
 	if !summary.Present {
 		return Result{}, ErrPrivateAPITokenNotFound
@@ -49,13 +61,13 @@ func PrivateAPI(ctx context.Context, cfg config.Config, st *store.Store, opts Op
 			return Result{}, err
 		}
 	}
-	return syncPrivate(ctx, client, st, opts, cfg.API.IncludeSharedWithMe)
+	return syncPrivateWithMessage(ctx, client, st, opts, cfg.API.IncludeSharedWithMe, message)
 }
 
-func syncPrivate(ctx context.Context, client privateapi.Client, st *store.Store, opts Options, includeShared bool) (Result, error) {
+func syncPrivateWithMessage(ctx context.Context, client privateapi.Client, st *store.Store, opts Options, includeShared bool, message string) (Result, error) {
 	source := model.SourcePrivateAPI
 	started := time.Now().UTC()
-	result := Result{Source: source}
+	result := Result{Source: source, Message: message}
 	docs, err := client.GetDocuments(ctx, privateapi.DocumentsRequest{IncludeSharedWithMe: includeShared})
 	if err != nil {
 		return result, err
@@ -122,7 +134,7 @@ func syncPrivate(ctx context.Context, client privateapi.Client, st *store.Store,
 		}
 	}
 	completed := time.Now().UTC()
-	_, _ = st.InsertSyncRun(ctx, model.SyncRun{Source: source, StartedAt: started, CompletedAt: completed, Status: "ok", Notes: result.Notes, Transcripts: result.Transcripts, Panels: result.Panels})
+	_, _ = st.InsertSyncRun(ctx, model.SyncRun{Source: source, StartedAt: started, CompletedAt: completed, Status: "ok", Notes: result.Notes, Transcripts: result.Transcripts, Panels: result.Panels, Message: result.Message})
 	return result, nil
 }
 

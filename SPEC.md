@@ -139,8 +139,8 @@ operator should always know which trust boundary is being crossed.
 - module: `github.com/openclaw/graincrawl`
 - binary: `graincrawl`
 - language: Go for the CLI/archive
-- helper language: minimal Electron/Node helper for macOS local encrypted
-  surfaces
+- encrypted JSON: in-process Go implementation after explicit authorization;
+  future OPFS work may still require Electron
 - shared library: `github.com/openclaw/crawlkit`
 - default local app dir: `~/.config/graincrawl`
 
@@ -185,8 +185,7 @@ Default request headers:
 Token behavior:
 
 - Read `supabase.json` plaintext when available.
-- If `supabase.json.enc` exists and is newer, require explicit unlock through
-  the helper.
+- If `supabase.json.enc` exists and is newer, require explicit unlock.
 - If token is still valid, use it.
 - If token is expired, default behavior is to fail with a clear message:
   `open Granola or run graincrawl unlock --allow-refresh`.
@@ -257,7 +256,7 @@ Encrypted cache behavior:
 
 ### `encrypted-json`
 
-Mac helper source for Electron safeStorage-backed JSON files.
+Explicit macOS unlock source for Electron safeStorage-backed JSON files.
 
 Inputs:
 
@@ -271,33 +270,33 @@ Process:
 1. Operator runs an explicit command:
    - `graincrawl unlock encrypted-json`
    - or `graincrawl sync --source desktop-cache --unlock encrypted-json`
-2. CLI starts a short-lived helper.
-3. Helper sets Electron app name to `Granola`.
-4. Helper calls `safeStorage.decryptString(storage.dek)`.
-5. Helper AES-GCM decrypts requested `.enc` files.
-6. Helper returns parsed JSON or a temp plaintext stream over stdout/pipe.
-7. CLI imports data.
-8. Helper exits.
+2. CLI validates `allow_encrypted_json` and `keychain_prompt_mode`, then
+   snapshots only the requested encrypted files into memory.
+3. CLI reads the `Granola Safe Storage` / `Granola Key` generic password
+   through `/usr/bin/security`.
+4. CLI unwraps the Chromium `v10` safeStorage payload using the macOS
+   PBKDF2/AES-CBC format.
+5. CLI AES-GCM decrypts only the requested `.enc` files.
+6. CLI imports data and clears sensitive byte buffers where practical.
 
 Security rules:
 
-- No long-running helper.
+- No hidden command or alternate Keychain entry point.
 - No raw DEK logs.
 - No raw token logs.
-- No decrypted file written to disk by default.
-- If a temp file is necessary for debugging, require `--debug-keep-temp` and
-  write under a mode `0700` temp dir.
+- No decrypted file written to disk.
 - Keychain prompts must only happen inside explicit unlock commands.
 - CLI output must say which surface triggered Keychain/safeStorage access.
 
 Potential Keychain friction:
 
 - macOS may bind the safeStorage secret to app name/service/account identity.
-- A helper may trigger a prompt that appears to reference Granola.
+- The Keychain lookup may trigger a prompt that references `security` or
+  graincrawl.
 - If access is denied, `graincrawl` should degrade cleanly:
   `encrypted storage locked; rerun with --unlock or use private-api`.
-- If helper identity breaks across Electron versions, fallback to asking the
-  operator to open Granola and use API/companion CLI.
+- If the safeStorage format changes, fallback to asking the operator to open
+  Granola and use API/companion CLI.
 
 ### `opfs`
 
@@ -615,7 +614,7 @@ Desktop cache sync:
 Encrypted JSON sync:
 
 1. Require explicit unlock.
-2. Decrypt target JSON files via helper.
+2. Decrypt target JSON files in memory after authorization.
 3. Reuse desktop cache or supabase token parser.
 
 OPFS sync:
@@ -643,19 +642,18 @@ Conflict behavior:
 - Keep all raw source payloads for audit.
 - Show source disagreements in `doctor data` or `graincrawl note diff <id>`.
 
-## keychain and helper process
+## keychain and unlock process
 
 This is the riskiest part. Make it boring and explicit.
 
-Helper binary:
+Encrypted JSON implementation:
 
-- name: `graincrawl-granola-helper`
-- implementation: small Electron app/script, launched by `graincrawl`
-- lifetime: one command
-- transport: stdout JSON lines or a local pipe
-- timeout: default 30 seconds
-- temp dirs: mode `0700`
-- cleanup: always remove temp profile copies unless `--debug-keep-temp`
+- no hidden command or alternate executable mode
+- runs only after public command authorization checks
+- Keychain timeout: 30 seconds
+- snapshots requested encrypted files into memory before Keychain access
+- clears the Keychain secret, DEK, encrypted snapshot, and decrypted payload
+  buffers where practical
 
 Unlock surfaces:
 
@@ -668,19 +666,18 @@ Rules:
 - `graincrawl status` and ordinary `graincrawl notes` must not trigger
   Keychain prompts.
 - Commands that may prompt must include `unlock` or `--unlock`.
-- Before launching helper, print the surface being accessed unless `--json`.
+- Command output must identify the surface that triggered Keychain access.
 - In JSON mode, report `requires_unlock` instead of prompting unless
   `--unlock` is present.
-- Helper returns only requested data, never the raw safeStorage DEK or OPFS
-  SQLCipher key.
-- Helper stderr is captured and redacted.
-- Helper refuses unknown Granola app versions unless `--allow-unknown-version`.
+- The decryptor returns only requested data, never the raw safeStorage DEK.
+- Raw `/usr/bin/security` stderr is discarded.
+- The decryptor refuses unknown safeStorage prefixes and malformed encrypted
+  payload formats.
 - Helper refuses to read live OPFS directly; it must copy first.
 
 Keychain UX:
 
-- If macOS prompts, the prompt may name Granola or Electron depending on helper
-  identity.
+- If macOS prompts, the prompt may name `security` or graincrawl.
 - Document this in `doctor encrypted-json --explain`.
 - If access is denied, exit non-zero with an actionable message.
 - Do not retry in a loop. One prompt attempt per command.
@@ -784,9 +781,9 @@ only the generic process supervisor/temp-copy/redaction mechanics into
 - add `sync --source desktop-cache`
 - add stale plaintext/encrypted detection
 
-### phase 4: encrypted JSON helper
+### phase 4: encrypted JSON unlock
 
-- add helper scaffold
+- add explicit authorization gate
 - implement safeStorage unwrap
 - implement AES-256-GCM decrypt
 - support decrypting `cache-v6.json.enc` and `supabase.json.enc`
@@ -819,7 +816,7 @@ only the generic process supervisor/temp-copy/redaction mechanics into
 - fixture coverage for API shapes
 - fixture coverage for cache-v6 shape
 - source disagreement reports
-- helper timeout/crash tests
+- Keychain timeout/error tests
 - token redaction tests
 - temp cleanup tests
 - `go test ./...`
@@ -845,7 +842,7 @@ Integration tests:
 
 - private API client with fixture transport
 - desktop cache import from temp fixture
-- encrypted JSON helper with synthetic encrypted payloads
+- encrypted JSON unlock with synthetic encrypted payloads
 - OPFS helper behind a build tag or manual macOS test
 
 Manual proof commands:

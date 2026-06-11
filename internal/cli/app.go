@@ -9,14 +9,16 @@ import (
 	"github.com/openclaw/graincrawl/internal/buildinfo"
 	"github.com/openclaw/graincrawl/internal/config"
 	"github.com/openclaw/graincrawl/internal/doctor"
+	"github.com/openclaw/graincrawl/internal/encryptedjson"
 	"github.com/openclaw/graincrawl/internal/output"
 	gruntime "github.com/openclaw/graincrawl/internal/runtime"
 	"github.com/openclaw/graincrawl/internal/syncer"
 )
 
 type App struct {
-	Stdout io.Writer
-	Stderr io.Writer
+	Stdout               io.Writer
+	Stderr               io.Writer
+	DecryptEncryptedJSON encryptedjson.DecryptFunc
 }
 
 func (a App) Run(ctx context.Context, args []string) error {
@@ -72,7 +74,7 @@ func (a App) Run(ctx context.Context, args []string) error {
 	case "sources":
 		return a.runSources(ctx, stdout, flags)
 	case "unlock":
-		return a.runUnlock(ctx, stdout, flags)
+		return a.runUnlock(ctx, stdout, flags, cmdArgs)
 	case "secrets":
 		return a.runSecrets(ctx, stdout, flags)
 	case "export":
@@ -101,7 +103,9 @@ func (a App) runSync(ctx context.Context, w io.Writer, flags GlobalFlags, args [
 		return err
 	}
 	defer rt.Close()
-	result, err := syncer.Run(ctx, rt.Config, rt.Store, parseSyncOptions(args))
+	opts := parseSyncOptions(args)
+	opts.DecryptEncryptedJSON = a.encryptedJSONDecryptor()
+	result, err := syncer.Run(ctx, rt.Config, rt.Store, opts)
 	if err != nil {
 		return err
 	}
@@ -116,6 +120,13 @@ func (a App) runSync(ctx context.Context, w io.Writer, flags GlobalFlags, args [
 		output.PrintKV(w, "message", result.Message)
 	}
 	return nil
+}
+
+func (a App) encryptedJSONDecryptor() encryptedjson.DecryptFunc {
+	if a.DecryptEncryptedJSON != nil {
+		return a.DecryptEncryptedJSON
+	}
+	return encryptedjson.Decrypt
 }
 
 func (a App) runStatus(ctx context.Context, w io.Writer, flags GlobalFlags) error {

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add explicit in-memory encrypted Granola JSON unlock for cache import and private API authentication.
 - Add a clear diagnostic when Granola desktop exposes encrypted-only state, thanks @elijahmuraoka.
 
 ## v0.2.1 - 2026-05-18

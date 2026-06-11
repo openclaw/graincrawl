@@ -17,8 +17,8 @@ browser over the archived SQLite data.
 - export notes to Markdown
 - browse archived notes with the shared crawlkit TUI
 - create/import portable crawlkit snapshots
-- keep encrypted JSON, OPFS, Keychain, and helper paths behind explicit unlock
-  surfaces
+- explicitly unlock encrypted JSON for in-memory cache import or private API
+  authentication; keep OPFS unsupported
 
 ## Install
 
@@ -62,7 +62,9 @@ graincrawl check-update
 graincrawl metadata
 graincrawl status
 graincrawl sync --source private-api
+graincrawl sync --source private-api --unlock encrypted-json
 graincrawl sync --source desktop-cache
+graincrawl sync --source desktop-cache --unlock encrypted-json
 graincrawl runs
 graincrawl notes
 graincrawl search "decision"
@@ -74,6 +76,7 @@ graincrawl people
 graincrawl workspaces
 graincrawl sources
 graincrawl unlock
+graincrawl unlock encrypted-json
 graincrawl secrets
 graincrawl export markdown --out ./granola-notes
 graincrawl snapshot create --out ./graincrawl-snapshot
@@ -114,8 +117,10 @@ See [docs/distribution.md](docs/distribution.md).
 read endpoints or local files and stores its own archive under the configured
 graincrawl paths.
 
-Encrypted JSON, OPFS, Electron safeStorage, and macOS Keychain paths require
-explicit unlock flow. Ordinary `doctor`, `status`, `notes`, `export`, and `tui`
-commands must not surprise-prompt Keychain.
+Encrypted JSON and macOS Keychain access require `allow_encrypted_json = true`
+plus an explicit `unlock encrypted-json` command or `--unlock encrypted-json`
+sync flag. Decrypted payloads stay in process memory and are not written back
+to Granola. OPFS remains unsupported. Ordinary `doctor`, `status`, `notes`,
+`export`, and `tui` commands never prompt Keychain.
 
 See [docs/security.md](docs/security.md).

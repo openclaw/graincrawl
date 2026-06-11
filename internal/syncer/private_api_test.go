@@ -36,7 +36,7 @@ func TestSyncPrivateHydratesDocumentBodyBeforeUpsert(t *testing.T) {
 	}
 	defer st.Close()
 	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
-	if _, err := syncPrivate(ctx, client, st, Options{Source: model.SourcePrivateAPI, Limit: 1}, false); err != nil {
+	if _, err := syncPrivateWithMessage(ctx, client, st, Options{Source: model.SourcePrivateAPI, Limit: 1}, false, ""); err != nil {
 		t.Fatal(err)
 	}
 	note, ok, err := st.GetNote(ctx, "doc-1")

@@ -110,7 +110,7 @@ func TestAppReportsEncryptedOnlyGranolaState(t *testing.T) {
 			t.Fatalf("%v failed: %v", command, err)
 		}
 		text := out.String()
-		for _, want := range []string{"encrypted-only", "not implemented", "supabase.json"} {
+		for _, want := range []string{"encrypted-only", "explicit", "supabase.json"} {
 			if !strings.Contains(text, want) {
 				t.Fatalf("%v output missing %q:\n%s", command, want, text)
 			}
@@ -122,8 +122,92 @@ func TestAppReportsEncryptedOnlyGranolaState(t *testing.T) {
 	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "unlock"}); err != nil {
 		t.Fatalf("unlock failed: %v", err)
 	}
-	if !strings.Contains(unlockOut.String(), "not implemented") {
-		t.Fatalf("unlock output should not imply implemented encrypted unlock:\n%s", unlockOut.String())
+	if !strings.Contains(unlockOut.String(), "disabled") || strings.Contains(unlockOut.String(), "keychain_accessed") {
+		t.Fatalf("unlock status should remain prompt-free when disabled:\n%s", unlockOut.String())
+	}
+}
+
+func TestAppExplicitEncryptedJSONUnlockRedactsPayload(t *testing.T) {
+	cfgPath := writeTestConfig(t)
+	cfg, _, err := config.Load(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Granola.AllowEncryptedJSON = true
+	cfg.Security.KeychainPromptMode = "explicit"
+	if err := config.Save(cfgPath, cfg); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(cfg.Granola.ProfilePath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"storage.dek", "cache-v6.json.enc", "supabase.json.enc"} {
+		if err := os.WriteFile(filepath.Join(cfg.Granola.ProfilePath, name), []byte("encrypted"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cacheRaw := json.RawMessage(`{"cache":{"version":8,"state":{"documents":{"doc1":{"id":"doc1","created_at":"2026-05-06T01:00:00Z","updated_at":"2026-05-06T02:00:00Z","title":"Sensitive title","notes_plain":"Sensitive note"}},"transcripts":{}}}}`)
+	supabaseRaw := json.RawMessage(`{"workos_tokens":"{\"access_token\":\"synthetic-secret-token\",\"refresh_token\":\"synthetic-refresh-token\",\"obtained_at\":4102444800000,\"expires_in\":3600}","user_info":"{\"email\":\"private@example.com\"}"}`)
+	decryptCalls := 0
+	app := App{
+		DecryptEncryptedJSON: func(_ context.Context, _ string, names ...string) (map[string]json.RawMessage, error) {
+			decryptCalls++
+			return map[string]json.RawMessage{
+				"cache-v6.json.enc": cacheRaw,
+				"supabase.json.enc": supabaseRaw,
+			}, nil
+		},
+	}
+
+	var doctorOut bytes.Buffer
+	app.Stdout = &doctorOut
+	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "doctor"}); err != nil {
+		t.Fatal(err)
+	}
+	if decryptCalls != 0 {
+		t.Fatal("doctor invoked encrypted-json decryptor")
+	}
+
+	var unlockOut bytes.Buffer
+	app.Stdout = &unlockOut
+	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "unlock", "encrypted-json"}); err != nil {
+		t.Fatal(err)
+	}
+	if decryptCalls != 1 {
+		t.Fatalf("expected one explicit decryptor call, got %d", decryptCalls)
+	}
+	text := unlockOut.String()
+	for _, want := range []string{`"surface": "encrypted-json"`, `"document_count": 1`, `"present": true`} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("unlock output missing %q:\n%s", want, text)
+		}
+	}
+	for _, forbidden := range []string{"synthetic-secret-token", "synthetic-refresh-token", "Sensitive title", "Sensitive note", "private@example.com"} {
+		if strings.Contains(text, forbidden) {
+			t.Fatalf("unlock output leaked %q:\n%s", forbidden, text)
+		}
+	}
+}
+
+func TestAppFormerEncryptedJSONHelperCommandCannotDecrypt(t *testing.T) {
+	decryptCalls := 0
+	var out bytes.Buffer
+	app := App{
+		Stdout: &out,
+		DecryptEncryptedJSON: func(context.Context, string, ...string) (map[string]json.RawMessage, error) {
+			decryptCalls++
+			return nil, nil
+		},
+	}
+	err := app.Run(context.Background(), []string{"_encrypted-json-helper"})
+	if err == nil || !strings.Contains(err.Error(), "unknown command") {
+		t.Fatalf("expected former helper command rejection, got %v", err)
+	}
+	if decryptCalls != 0 {
+		t.Fatalf("former helper command invoked decryptor %d times", decryptCalls)
+	}
+	if out.Len() != 0 {
+		t.Fatalf("former helper command wrote output: %q", out.String())
 	}
 }
 
@@ -268,12 +352,28 @@ func TestAppRejectsUnknownCommand(t *testing.T) {
 }
 
 func TestParseSyncOptionsKeepsSkipFlags(t *testing.T) {
-	opts := parseSyncOptions([]string{"--source", "desktop-cache", "--limit", "2", "--no-transcripts", "--no-panels"})
+	opts := parseSyncOptions([]string{"--source", "desktop-cache", "--limit", "2", "--unlock", "encrypted-json", "--no-transcripts", "--no-panels"})
 	if opts.Source != model.SourceDesktopCache || opts.Limit != 2 {
 		t.Fatalf("bad source or limit: %#v", opts)
 	}
+	if opts.UnlockSurface != "encrypted-json" {
+		t.Fatalf("unlock surface = %q", opts.UnlockSurface)
+	}
 	if !opts.SkipTranscripts || !opts.SkipPanels {
 		t.Fatalf("expected skip flags, got %#v", opts)
+	}
+}
+
+func TestShellCompletionsIncludeEncryptedJSONUnlock(t *testing.T) {
+	for shell, completion := range map[string]string{
+		"bash": bashCompletion(),
+		"zsh":  zshCompletion(),
+	} {
+		for _, want := range []string{"--unlock", "encrypted-json"} {
+			if !strings.Contains(completion, want) {
+				t.Fatalf("%s completion missing %q", shell, want)
+			}
+		}
 	}
 }
 

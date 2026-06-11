@@ -39,7 +39,7 @@ func TestRunReportsEncryptedOnlyGranolaState(t *testing.T) {
 		t.Fatalf("unexpected diagnostic metadata: %#v", diagnostic)
 	}
 	if !strings.Contains(diagnostic.Message, "encrypted-only") ||
-		!strings.Contains(diagnostic.Message, "not implemented") ||
+		!strings.Contains(diagnostic.Message, "explicit") ||
 		!strings.Contains(diagnostic.Message, "supabase.json") {
 		t.Fatalf("diagnostic does not explain encrypted-only state: %q", diagnostic.Message)
 	}

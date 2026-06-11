@@ -17,6 +17,9 @@ func parseSyncOptions(args []string) syncer.Options {
 			opts.Limit = n
 		}
 	}
+	if surface, ok := flagValue(args, "--unlock"); ok {
+		opts.UnlockSurface = surface
+	}
 	opts.SkipTranscripts = hasFlag(args, "--no-transcripts")
 	opts.SkipPanels = hasFlag(args, "--no-panels")
 	return opts

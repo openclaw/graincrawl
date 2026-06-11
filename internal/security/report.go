@@ -52,7 +52,7 @@ func Sources(cfg config.Config) []SourceSupport {
 			Allowed:     cfg.Granola.AllowEncryptedJSON,
 			Implemented: false,
 			NeedsSecret: true,
-			Notes:       "unsupported in this build; encrypted-only Granola state requires future explicit unlock/import",
+			Notes:       "unlock surface only; use --unlock encrypted-json with private-api or desktop-cache",
 		},
 		{
 			Source:      model.SourceOPFS,
@@ -72,17 +72,20 @@ func Sources(cfg config.Config) []SourceSupport {
 }
 
 func Unlock(cfg config.Config) UnlockReport {
-	needsCompanion := cfg.Granola.AllowEncryptedJSON || cfg.Granola.AllowOPFS
 	mode := cfg.Security.KeychainPromptMode
 	return UnlockReport{
 		KeychainPromptMode: mode,
 		PersistHelperKeys:  cfg.Security.PersistHelperKeys,
 		EncryptedJSON:      cfg.Granola.AllowEncryptedJSON,
 		OPFS:               cfg.Granola.AllowOPFS,
-		RequiresCompanion:  needsCompanion,
-		PromptAllowed:      mode == "ask" || mode == "always",
-		Message:            unlockMessage(needsCompanion, mode),
+		RequiresCompanion:  false,
+		PromptAllowed:      PromptAllowed(mode),
+		Message:            unlockMessage(cfg.Granola.AllowEncryptedJSON, cfg.Granola.AllowOPFS, mode),
 	}
+}
+
+func PromptAllowed(mode string) bool {
+	return mode == "explicit" || mode == "ask" || mode == "always"
 }
 
 func Secrets(cfg config.Config) SecretReport {
@@ -91,13 +94,19 @@ func Secrets(cfg config.Config) SecretReport {
 		PersistHelperKeys:  cfg.Security.PersistHelperKeys,
 		KeychainPromptMode: cfg.Security.KeychainPromptMode,
 		GranolaKeychain:    "external",
-		Message:            "graincrawl does not persist Granola tokens; encrypted sources must unlock through an explicit helper flow",
+		Message:            "graincrawl does not persist Granola tokens; encrypted sources require an explicit unlock flow",
 	}
 }
 
-func unlockMessage(needsCompanion bool, mode string) string {
-	if !needsCompanion {
-		return "encrypted JSON and OPFS sources are disabled; encrypted-json unlock/import is not implemented in this version, and no keychain prompt is expected"
+func unlockMessage(encryptedJSON, opfs bool, mode string) string {
+	if !encryptedJSON && !opfs {
+		return "encrypted JSON and OPFS sources are disabled; no keychain prompt is expected"
 	}
-	return "encrypted local sources are configured, but encrypted-json/OPFS unlock/import is not implemented in this version; no companion helper or keychain prompt will run"
+	if encryptedJSON && PromptAllowed(mode) {
+		return "encrypted JSON unlock is available only through an explicit unlock command; OPFS remains unsupported"
+	}
+	if encryptedJSON {
+		return "encrypted JSON is enabled, but the current keychain prompt mode blocks unlock; OPFS remains unsupported"
+	}
+	return "OPFS is configured but unsupported in this build; no companion or keychain prompt will run"
 }

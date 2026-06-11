@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## v0.3.0 - 2026-06-11
 
 - Add explicit in-memory encrypted Granola JSON unlock for cache import and private API authentication.

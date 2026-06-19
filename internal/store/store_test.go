@@ -32,6 +32,13 @@ func TestStoreRoundTrip(t *testing.T) {
 	if err := st.UpsertNote(ctx, note); err != nil {
 		t.Fatal(err)
 	}
+	percentTitle := "100% Ready"
+	percentNote := note
+	percentNote.ID = "note-2"
+	percentNote.Title = &percentTitle
+	if err := st.UpsertNote(ctx, percentNote); err != nil {
+		t.Fatal(err)
+	}
 	got, ok, err := st.GetNote(ctx, "note-1")
 	if err != nil {
 		t.Fatal(err)
@@ -45,5 +52,19 @@ func TestStoreRoundTrip(t *testing.T) {
 	}
 	if len(results) != 1 || results[0].ID != note.ID {
 		t.Fatalf("unexpected search results: %#v", results)
+	}
+	literalPercent, err := st.SearchNotes(ctx, "%", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(literalPercent) != 1 || literalPercent[0].ID != percentNote.ID {
+		t.Fatalf("literal percent search results: %#v", literalPercent)
+	}
+	literalUnderscore, err := st.SearchNotes(ctx, "_", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(literalUnderscore) != 0 {
+		t.Fatalf("literal underscore search results: %#v", literalUnderscore)
 	}
 }

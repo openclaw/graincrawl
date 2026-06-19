@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Update `golang.org/x/sys` to remove GO-2026-5024 from the Windows dependency graph.
+
 ## v0.3.0 - 2026-06-11
 
 - Add explicit in-memory encrypted Granola JSON unlock for cache import and private API authentication.

@@ -4,6 +4,7 @@
 
 - Update `golang.org/x/sys` to remove GO-2026-5024 from the Windows dependency graph.
 - Refresh terminal rendering, Unicode text, and SQLite runtime dependencies.
+- Treat `%`, `_`, and backslashes literally in archive search and update CrawlKit.
 
 ## v0.3.0 - 2026-06-11
 

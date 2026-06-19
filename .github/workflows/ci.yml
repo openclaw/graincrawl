@@ -40,7 +40,7 @@ jobs:
           git diff --exit-code -- go.mod go.sum
 
       - name: Install govulncheck
-        run: GOWORK=off go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
+        run: GOWORK=off go install golang.org/x/vuln/cmd/govulncheck@v1.4.0
 
       - name: Run govulncheck
         run: GOWORK=off "$(go env GOPATH)/bin/govulncheck" ./...
@@ -70,7 +70,7 @@ jobs:
         run: GOWORK=off go vet ./...
 
       - name: Install deadcode
-        run: GOWORK=off go install golang.org/x/tools/cmd/deadcode@v0.45.0
+        run: GOWORK=off go install golang.org/x/tools/cmd/deadcode@v0.46.0
 
       - name: Deadcode
         run: |
@@ -138,7 +138,7 @@ jobs:
           cache: true
 
       - name: Snapshot release build
-        uses: goreleaser/goreleaser-action@v7.2.1
+        uses: goreleaser/goreleaser-action@v7.2.2
         with:
           distribution: goreleaser
           version: "~> v2"

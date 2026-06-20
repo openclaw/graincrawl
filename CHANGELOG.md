@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.3.1 - 2026-06-19
 
 - Update `golang.org/x/sys` to remove GO-2026-5024 from the Windows dependency graph.
 - Refresh terminal rendering, Unicode text, and SQLite runtime dependencies.

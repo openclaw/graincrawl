@@ -40,9 +40,6 @@ func nonFlagArgs(args []string) []string {
 			i++
 			continue
 		}
-		if strings.HasPrefix(args[i], "--") {
-			continue
-		}
 		out = append(out, args[i])
 	}
 	return out

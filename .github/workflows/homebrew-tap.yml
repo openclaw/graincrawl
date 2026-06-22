@@ -34,7 +34,12 @@ jobs:
       - name: Resolve release tag
         run: |
           set -euo pipefail
-          echo "RELEASE_TAG=${{ github.event.release.tag_name || inputs.tag_name }}" >> "$GITHUB_ENV"
+          release_tag="${{ github.event.release.tag_name || inputs.tag_name }}"
+          if [[ ! "${release_tag}" =~ ^v[0-9A-Za-z._-]+$ ]]; then
+            echo "::error::Invalid release tag: ${release_tag}"
+            exit 1
+          fi
+          echo "RELEASE_TAG=${release_tag}" >> "$GITHUB_ENV"
 
       - name: Dispatch tap formula update
         env:
@@ -71,14 +76,17 @@ jobs:
 
           run_id=""
           for _ in {1..30}; do
-            run_id=$(gh run list \
+            if ! run_json="$(gh run list \
               --repo "${TAP_REPO}" \
               --workflow update-formula.yml \
               --branch main \
               --event workflow_dispatch \
               --limit 20 \
-              --json databaseId,displayTitle \
-              --jq ".[] | select(.displayTitle == \"${expected_title}\") | .databaseId" | head -n1)
+              --json databaseId,displayTitle)"; then
+              sleep 5
+              continue
+            fi
+            run_id="$(jq -r --arg expected_title "${expected_title}" '.[] | select(.displayTitle == $expected_title) | .databaseId' <<<"${run_json}" | head -n1)"
             if [ -n "${run_id}" ]; then
               break
             fi

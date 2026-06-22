@@ -343,6 +343,75 @@ func TestAppSQLRunsReadOnlyQueries(t *testing.T) {
 	}
 }
 
+func TestAppPreservesFlagLikeCommandArguments(t *testing.T) {
+	ctx := context.Background()
+	cfgPath := writeTestConfig(t)
+	cfg, _, err := config.Load(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(ctx, cfg.Paths.DBPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	title := "Flag Check"
+	if err := st.UpsertNote(ctx, model.Note{
+		ID:         "doc-flag",
+		Title:      &title,
+		Type:       "meeting",
+		CreatedAt:  time.Date(2026, 5, 6, 10, 0, 0, 0, time.UTC),
+		UpdatedAt:  time.Date(2026, 5, 6, 10, 0, 0, 0, time.UTC),
+		Source:     model.SourcePrivateAPI,
+		LastSeenAt: time.Date(2026, 5, 6, 10, 0, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	var sqlOut bytes.Buffer
+	app := App{Stdout: &sqlOut}
+	if err := app.Run(ctx, []string{"--json", "--config", cfgPath, "sql", "select '--json' as flag"}); err != nil {
+		t.Fatalf("sql with flag-like literal failed: %v", err)
+	}
+	if !strings.Contains(sqlOut.String(), "--json") {
+		t.Fatalf("sql output lost flag-like literal: %s", sqlOut.String())
+	}
+
+	var searchOut bytes.Buffer
+	app.Stdout = &searchOut
+	if err := app.Run(ctx, []string{"--json", "--config", cfgPath, "search", "--config"}); err != nil {
+		t.Fatalf("search with flag-like term failed: %v", err)
+	}
+	if !strings.Contains(searchOut.String(), "--config") {
+		t.Fatalf("search output lost flag-like query: %s", searchOut.String())
+	}
+}
+
+func TestAppInitDoesNotOverwriteExistingConfig(t *testing.T) {
+	root := t.TempDir()
+	cfgPath := filepath.Join(root, "config.toml")
+	sentinel := []byte("sentinel = true\n")
+	if err := os.WriteFile(cfgPath, sentinel, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	app := App{Stdout: &out}
+	err := app.Run(context.Background(), []string{"--config", cfgPath, "init", "--json"})
+	if err == nil || !strings.Contains(err.Error(), "config already exists") {
+		t.Fatalf("expected config exists error, got %v", err)
+	}
+	got, err := os.ReadFile(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, sentinel) {
+		t.Fatalf("init overwrote existing config: %q", string(got))
+	}
+}
+
 func TestAppRejectsUnknownCommand(t *testing.T) {
 	var out bytes.Buffer
 	app := App{Stdout: &out}
@@ -352,7 +421,10 @@ func TestAppRejectsUnknownCommand(t *testing.T) {
 }
 
 func TestParseSyncOptionsKeepsSkipFlags(t *testing.T) {
-	opts := parseSyncOptions([]string{"--source", "desktop-cache", "--limit", "2", "--unlock", "encrypted-json", "--no-transcripts", "--no-panels"})
+	opts, err := parseSyncOptions([]string{"--source", "desktop-cache", "--limit", "2", "--unlock", "encrypted-json", "--no-transcripts", "--no-panels"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if opts.Source != model.SourceDesktopCache || opts.Limit != 2 {
 		t.Fatalf("bad source or limit: %#v", opts)
 	}
@@ -361,6 +433,18 @@ func TestParseSyncOptionsKeepsSkipFlags(t *testing.T) {
 	}
 	if !opts.SkipTranscripts || !opts.SkipPanels {
 		t.Fatalf("expected skip flags, got %#v", opts)
+	}
+}
+
+func TestParseSyncOptionsRejectsInvalidLimit(t *testing.T) {
+	for _, args := range [][]string{
+		{"--limit", "0"},
+		{"--limit", "-1"},
+		{"--limit", "many"},
+	} {
+		if _, err := parseSyncOptions(args); err == nil {
+			t.Fatalf("parseSyncOptions(%v) succeeded with invalid limit", args)
+		}
 	}
 }
 

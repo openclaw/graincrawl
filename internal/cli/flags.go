@@ -27,7 +27,8 @@ func parseGlobalFlags(args []string) (GlobalFlags, []string) {
 				i++
 			}
 		default:
-			rest = append(rest, arg)
+			rest = append(rest, args[i:]...)
+			return flags, rest
 		}
 	}
 	return flags, rest

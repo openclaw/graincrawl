@@ -13,9 +13,7 @@ on:
       - edited
       - ready_for_review
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -24,6 +22,9 @@ jobs:
   autolabel:
     if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Autolabel pull request
         uses: release-drafter/release-drafter/autolabeler@v7
@@ -34,6 +35,9 @@ jobs:
     name: Update Release Draft
     if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Draft release notes
         uses: release-drafter/release-drafter@v7

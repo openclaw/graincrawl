@@ -63,10 +63,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+          err_file="$(mktemp)"
+          trap 'rm -f "${err_file}"' EXIT
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>"${err_file}"; then
             echo "RELEASE_EXISTS=1" >> "$GITHUB_ENV"
-          else
+          elif grep -qiE 'not found|could not resolve to a Release' "${err_file}"; then
             echo "RELEASE_EXISTS=0" >> "$GITHUB_ENV"
+          else
+            cat "${err_file}" >&2
+            exit 1
           fi
 
       - name: Publish release from Release Drafter
@@ -116,7 +121,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --upgrade pip
-          python3 -m pip install cloudsmith-cli
+          python3 -m pip install cloudsmith-cli==1.11.1
 
       - name: Publish APT packages to Cloudsmith
         if: ${{ env.CLOUDSMITH_ENABLED == '1' }}

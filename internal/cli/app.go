@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/openclaw/graincrawl/internal/buildinfo"
@@ -103,7 +104,10 @@ func (a App) runSync(ctx context.Context, w io.Writer, flags GlobalFlags, args [
 		return err
 	}
 	defer rt.Close()
-	opts := parseSyncOptions(args)
+	opts, err := parseSyncOptions(args)
+	if err != nil {
+		return err
+	}
 	opts.DecryptEncryptedJSON = a.encryptedJSONDecryptor()
 	result, err := syncer.Run(ctx, rt.Config, rt.Store, opts)
 	if err != nil {
@@ -161,6 +165,11 @@ func (a App) runInit(w io.Writer, flags GlobalFlags) error {
 	}
 	if path == "" {
 		path = defaultPath
+	}
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("config already exists at %s; remove it before running init", path)
+	} else if !os.IsNotExist(err) {
+		return err
 	}
 	if err := config.EnsureDirs(cfg); err != nil {
 		return err

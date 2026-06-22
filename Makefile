@@ -27,7 +27,9 @@ run:
 	GOWORK=off go run ./cmd/graincrawl --help
 
 smoke: build
+	set -eu; \
 	tmp="$$(mktemp -d)"; \
+	trap 'rm -rf "$$tmp"' EXIT; \
 	cfg="$$tmp/config.toml"; \
 	db="$$tmp/graincrawl.db"; \
 	mkdir -p "$$tmp/home" "$$tmp/xdg-config" "$$tmp/xdg-cache" "$$tmp/xdg-state"; \

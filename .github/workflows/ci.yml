@@ -118,11 +118,11 @@ jobs:
           cfg="$tmp/config.toml"
           db="$tmp/graincrawl.db"
           mkdir -p "$tmp/home" "$tmp/xdg-config" "$tmp/xdg-cache" "$tmp/xdg-state"
-          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" GRAINCRAWL_DB_PATH="$db" ./bin/graincrawl --config "$cfg" init --json | grep -q '"config_path"'
-          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" metadata --json | grep -q '"schema_version"'
-          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" status --json | grep -q '"databases"'
-          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" tui --json | grep -q '^\['
-          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" snapshot create --out "$tmp/snapshot" --json | grep -q '"manifest"'
+          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" GRAINCRAWL_DB_PATH="$db" ./bin/graincrawl --config "$cfg" --json init | grep -q '"config_path"'
+          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" --json metadata | grep -q '"schema_version"'
+          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" --json status | grep -q '"databases"'
+          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" --json tui | grep -q '^\['
+          env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" --json snapshot create --out "$tmp/snapshot" | grep -q '"manifest"'
 
   release-check:
     runs-on: ubuntu-latest

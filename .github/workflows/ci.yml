@@ -111,7 +111,7 @@ jobs:
           printf '%s' "$output" | grep -q "graincrawl archives Granola"
           printf '%s' "$output" | grep -q "metadata"
           printf '%s' "$output" | grep -q "tui"
-          ./bin/graincrawl version --json | grep -Eq '^version:[[:space:]]*ci$'
+          ./bin/graincrawl --json version | grep -Eq '"version"[[:space:]]*:[[:space:]]*"ci"'
           tmp="$RUNNER_TEMP/graincrawl-smoke"
           cfg="$tmp/config.toml"
           db="$tmp/graincrawl.db"

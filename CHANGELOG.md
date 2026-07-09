@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.3.2 - 2026-07-09
+
 - Add Developer ID signing and pre-publish verification for official macOS archives.
 - Update CrawlKit to v0.13.4.
 - Update Go to 1.26.5 to remove GO-2026-5856 from the `crypto/tls` dependency graph.

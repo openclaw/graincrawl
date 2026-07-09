@@ -1,5 +1,6 @@
 bin/
 dist/
+.mac-release.env
 coverage.out
 *.db
 *.db-*

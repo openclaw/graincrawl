@@ -25,31 +25,61 @@ make release-snapshot
 ```
 
 That creates local snapshot archives, checksums, `.deb`, and `.rpm` packages
-under `dist/` without publishing.
+under `dist/` without publishing or requiring signing credentials.
+
+## Signed macOS Assets
+
+Official macOS archives use the identifier `org.openclaw.graincrawl` and the
+identity `Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)`. Build
+them only from a clean checkout whose `HEAD` exactly matches a trusted signed
+release tag:
+
+```bash
+make release-artifacts VERSION=v0.3.2
+scripts/verify-graincrawl-release.sh v0.3.2 \
+  dist/graincrawl_0.3.2_darwin_arm64.tar.gz \
+  dist/graincrawl_0.3.2_darwin_amd64.tar.gz
+```
+
+`release-artifacts` uses the shared managed-keychain helper. Credential routing
+belongs in an ignored `.mac-release.env` or approved private environment,
+never in Git. The same GoReleaser configuration remains credential-free for
+ordinary local, Linux, Windows, and snapshot builds.
 
 ## Release Notes
 
-GitHub uses Release Drafter to auto-label PRs and generate release notes from
-merged pull requests. The release workflow publishes the Release Drafter output
-for the pushed tag, then uploads the GoReleaser artifacts to that release.
+GitHub uses Release Drafter to auto-label PRs and maintain release notes from
+merged pull requests. Copy those notes, including the matching changelog
+entries, into the tagged draft release before staging the signed archives.
 
 ## Tagged Release
 
-Create and push a semver tag:
+Create and push a signed semver tag:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag -s v0.3.2
+git push origin v0.3.2
 ```
 
-The release workflow:
+The official release runs locally on an authorized maintainer Mac:
 
-1. runs tests
-2. builds GoReleaser artifacts
-3. publishes Release Drafter notes for the tag
-4. uploads GitHub release assets
-5. optionally publishes APT/RPM packages to Cloudsmith
-6. updates the Homebrew tap
+1. run `make release-artifacts VERSION=<tag>`
+2. verify both signed Darwin archives with
+   `scripts/verify-graincrawl-release.sh`
+3. create a tagged draft GitHub release with the Release Drafter notes and
+   matching changelog entries
+4. upload every archive, Linux package, Darwin `.sha256` sidecar, and
+   `sha256sums.txt` from `dist/`
+5. verify the uploaded draft assets, then publish it
+
+Publishing the release triggers independent native macOS signature checks and
+the Homebrew tap update. Dispatch the APT/RPM workflows after publication when
+Cloudsmith publishing is enabled.
+
+GitHub Actions never receives the Developer ID private key and never publishes
+GitHub Release artifacts. The `Release Validation` workflow is an optional
+credential-free test and snapshot check for an existing signed tag. The
+`Release Assets` workflow only verifies already-published files.
 
 ## Secrets
 

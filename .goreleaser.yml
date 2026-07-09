@@ -21,6 +21,9 @@ builds:
         -X github.com/openclaw/graincrawl/internal/buildinfo.Version={{ .Version }}
         -X github.com/openclaw/graincrawl/internal/buildinfo.Commit={{ .Commit }}
         -X github.com/openclaw/graincrawl/internal/buildinfo.Date={{ .Date }}
+    hooks:
+      post:
+        - go run ./scripts/codesign-hook.go {{ .Target }} {{ .Path }}
 
 archives:
   - id: bundles

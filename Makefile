@@ -1,4 +1,4 @@
-.PHONY: test vet tidy check build run smoke release-snapshot clean
+.PHONY: test vet tidy check build run smoke release-snapshot release-artifacts clean
 
 VERSION ?= 0.0.0-dev
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
@@ -41,6 +41,11 @@ smoke: build
 
 release-snapshot:
 	GOWORK=off goreleaser release --snapshot --clean --skip=publish
+
+release-artifacts:
+	@test "$(VERSION)" != "0.0.0-dev" || (echo "usage: make release-artifacts VERSION=vX.Y.Z" >&2; exit 2)
+	@helper="$${MAC_RELEASE_HELPER:-$$HOME/Projects/agent-scripts/skills/release-mac-app/scripts/mac-release}"; \
+	"$$helper" codesign-run -- ./scripts/package-graincrawl-release.sh "$(VERSION)"
 
 clean:
 	rm -rf bin dist

@@ -3,7 +3,7 @@ module github.com/openclaw/graincrawl
 go 1.26.5
 
 require (
-	github.com/openclaw/crawlkit v0.13.4
+	github.com/openclaw/crawlkit v0.14.2
 	github.com/pelletier/go-toml/v2 v2.4.3
 	modernc.org/sqlite v1.53.0
 )

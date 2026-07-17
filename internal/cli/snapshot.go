@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/openclaw/graincrawl/internal/output"
@@ -38,37 +39,50 @@ func (a App) runSnapshot(ctx context.Context, w io.Writer, flags GlobalFlags, ar
 }
 
 func (a App) runImport(ctx context.Context, w io.Writer, flags GlobalFlags, args []string) error {
-	path := importPath(args)
-	if path == "" {
-		return fmt.Errorf("usage: graincrawl import <snapshot-dir>")
+	path, replace, err := parseImportArgs(args)
+	if err != nil {
+		return err
 	}
 	rt, err := gruntime.Open(ctx, flags.ConfigPath)
 	if err != nil {
 		return err
 	}
 	defer rt.Close()
-	manifest, err := portable.Import(ctx, rt.Store, portable.Options{RootDir: path})
+	manifest, err := portable.Import(ctx, rt.Store, portable.Options{RootDir: path, Replace: replace})
 	if err != nil {
 		return err
 	}
-	result := map[string]any{"snapshot_dir": path, "manifest": manifest}
+	mode := "merge"
+	if replace {
+		mode = "replace"
+	}
+	result := map[string]any{"snapshot_dir": path, "mode": mode, "manifest": manifest}
 	if flags.JSON {
 		return output.WriteEnvelope(w, result)
 	}
 	output.PrintKV(w, "imported", path)
+	output.PrintKV(w, "mode", mode)
 	output.PrintKV(w, "tables", len(manifest.Tables))
 	return nil
 }
 
-func importPath(args []string) string {
-	if len(args) == 0 {
-		return ""
-	}
-	if args[0] == "snapshot" || args[0] == "import" {
-		if len(args) > 1 {
-			return args[1]
+func parseImportArgs(args []string) (string, bool, error) {
+	var path string
+	var replace bool
+	for _, arg := range args {
+		switch {
+		case arg == "--replace":
+			replace = true
+		case strings.HasPrefix(arg, "-"):
+			return "", false, fmt.Errorf("unknown import flag %q", arg)
+		case path == "":
+			path = arg
+		default:
+			return "", false, fmt.Errorf("usage: graincrawl import [--replace] <snapshot-dir>")
 		}
-		return ""
 	}
-	return args[0]
+	if path == "" {
+		return "", false, fmt.Errorf("usage: graincrawl import [--replace] <snapshot-dir>")
+	}
+	return path, replace, nil
 }

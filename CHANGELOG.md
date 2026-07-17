@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Preserve explicit Granola deletions as note, transcript, panel, and source-object tombstones, and make portable snapshot imports merge by default with explicit `--replace` restores.
+
 ## v0.3.2 - 2026-07-09
 
 - Add Developer ID signing and pre-publish verification for official macOS archives.

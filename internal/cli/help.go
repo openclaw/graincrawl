@@ -28,7 +28,8 @@ Commands:
   secrets                 Inspect graincrawl-managed secret state.
   export markdown         Export notes as Markdown.
   snapshot create         Create a portable crawlkit snapshot.
-  import <path>           Import a portable crawlkit snapshot.
+  import [--replace] <path>
+                          Merge a portable snapshot; --replace restores exactly.
   tui                     Browse archived notes in the terminal.
   completion              Print shell completion for bash or zsh.
 

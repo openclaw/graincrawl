@@ -120,6 +120,7 @@ func (a App) runSync(ctx context.Context, w io.Writer, flags GlobalFlags, args [
 	output.PrintKV(w, "notes", result.Notes)
 	output.PrintKV(w, "transcripts", result.Transcripts)
 	output.PrintKV(w, "panels", result.Panels)
+	output.PrintKV(w, "deleted", result.Deleted)
 	if result.Message != "" {
 		output.PrintKV(w, "message", result.Message)
 	}

@@ -61,6 +61,9 @@ func importDesktopCache(ctx context.Context, st *store.Store, opts Options, file
 			return result, err
 		}
 		note.Source = source
+		if note.DeletedAt != nil {
+			note.DeletionSource = string(source)
+		}
 		if err := st.UpsertNote(ctx, note); err != nil {
 			return result, err
 		}
@@ -80,6 +83,16 @@ func importDesktopCache(ctx context.Context, st *store.Store, opts Options, file
 				}
 				result.Transcripts++
 			}
+		}
+		if note.DeletedAt != nil {
+			if err := st.TombstoneDocument(ctx, doc.ID, store.Deletion{
+				At:     *note.DeletedAt,
+				Source: source,
+				Reason: store.DeletionReasonSourceField,
+			}); err != nil {
+				return result, err
+			}
+			result.Deleted++
 		}
 	}
 	completed := time.Now().UTC()

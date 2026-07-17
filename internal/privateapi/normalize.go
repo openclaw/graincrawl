@@ -31,7 +31,7 @@ func NoteFromDocument(doc Document, now time.Time) (model.Note, error) {
 	notesMarkdown := firstStringPtr(doc.NotesMarkdown, textFromJSON(doc.Notes, "markdown", "markdown_text", "md"))
 	summaryText := textFromJSON(doc.Summary, "plain", "text", "content", "summary")
 	summaryMarkdown := textFromJSON(doc.Summary, "markdown", "markdown_text", "md")
-	return model.Note{
+	note := model.Note{
 		ID:              doc.ID,
 		Title:           doc.Title,
 		Type:            noteType,
@@ -47,7 +47,12 @@ func NoteFromDocument(doc Document, now time.Time) (model.Note, error) {
 		Source:          model.SourcePrivateAPI,
 		PayloadHash:     hashutil.JSON(doc),
 		LastSeenAt:      now,
-	}, nil
+	}
+	if deleted != nil {
+		note.DeletionSource = string(model.SourcePrivateAPI)
+		note.DeletionReason = "source-deleted-at"
+	}
+	return note, nil
 }
 
 func TranscriptToModel(chunk TranscriptChunk) (model.TranscriptChunk, error) {
@@ -90,7 +95,7 @@ func PanelToModel(panel Panel) (model.Panel, error) {
 		content = string(panel.Content)
 	}
 	plain := panelText(panel.Content)
-	return model.Panel{
+	modelPanel := model.Panel{
 		ID:           panel.ID,
 		DocumentID:   panel.DocumentID,
 		Title:        panel.Title,
@@ -102,7 +107,17 @@ func PanelToModel(panel Panel) (model.Panel, error) {
 		LastViewedAt: viewed,
 		YdocVersion:  panel.YdocVersion,
 		Source:       model.SourcePrivateAPI,
-	}, nil
+	}
+	deleted, err := timeutil.ParsePtr(panel.DeletedAt)
+	if err != nil {
+		return model.Panel{}, err
+	}
+	if deleted != nil {
+		modelPanel.DeletedAt = deleted
+		modelPanel.DeletionSource = string(model.SourcePrivateAPI)
+		modelPanel.DeletionReason = "source-deleted-at"
+	}
+	return modelPanel, nil
 }
 
 func panelText(raw json.RawMessage) *string {

@@ -13,15 +13,17 @@ func (s *Store) UpsertNote(ctx context.Context, note model.Note) error {
 INSERT INTO notes (
   id, title, type, status, created_at, updated_at, deleted_at, workspace_id,
   calendar_event_id, notes_plain, notes_markdown, summary_text,
-  summary_markdown, source, payload_hash, last_seen_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  summary_markdown, source, payload_hash, last_seen_at, deletion_source, deletion_reason
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO UPDATE SET
   title=excluded.title,
   type=excluded.type,
   status=excluded.status,
   created_at=excluded.created_at,
   updated_at=excluded.updated_at,
-  deleted_at=excluded.deleted_at,
+  deleted_at=COALESCE(notes.deleted_at, excluded.deleted_at),
+	deletion_source=COALESCE(notes.deletion_source, excluded.deletion_source),
+	deletion_reason=COALESCE(notes.deletion_reason, excluded.deletion_reason),
   workspace_id=excluded.workspace_id,
   calendar_event_id=excluded.calendar_event_id,
   notes_plain=excluded.notes_plain,
@@ -34,7 +36,8 @@ ON CONFLICT(id) DO UPDATE SET
 		note.ID, note.Title, note.Type, note.Status, note.CreatedAt.Format(time.RFC3339Nano),
 		note.UpdatedAt.Format(time.RFC3339Nano), timePtr(note.DeletedAt), note.WorkspaceID,
 		note.CalendarEventID, note.NotesPlain, note.NotesMarkdown, note.SummaryText,
-		note.SummaryMarkdown, string(note.Source), note.PayloadHash, note.LastSeenAt.Format(time.RFC3339Nano))
+		note.SummaryMarkdown, string(note.Source), note.PayloadHash, note.LastSeenAt.Format(time.RFC3339Nano),
+		nullableString(note.DeletionSource), nullableString(note.DeletionReason))
 	return err
 }
 
@@ -45,7 +48,7 @@ func (s *Store) ListNotes(ctx context.Context, limit int) ([]model.Note, error) 
 	rows, err := s.DB().QueryContext(ctx, `
 SELECT id, title, type, status, created_at, updated_at, deleted_at, workspace_id,
   calendar_event_id, notes_plain, notes_markdown, summary_text,
-  summary_markdown, source, payload_hash, last_seen_at
+  summary_markdown, source, payload_hash, last_seen_at, deletion_source, deletion_reason
 FROM notes
 ORDER BY created_at DESC
 LIMIT ?`, limit)
@@ -68,7 +71,7 @@ func (s *Store) GetNote(ctx context.Context, id string) (model.Note, bool, error
 	row := s.DB().QueryRowContext(ctx, `
 SELECT id, title, type, status, created_at, updated_at, deleted_at, workspace_id,
   calendar_event_id, notes_plain, notes_markdown, summary_text,
-  summary_markdown, source, payload_hash, last_seen_at
+  summary_markdown, source, payload_hash, last_seen_at, deletion_source, deletion_reason
 FROM notes
 WHERE id = ?`, id)
 	note, err := scanNote(row)
@@ -87,9 +90,9 @@ type noteScanner interface {
 
 func scanNote(scanner noteScanner) (model.Note, error) {
 	var n model.Note
-	var title, status, deleted, workspace, eventID, plain, markdown, summaryText, summaryMarkdown, source, payloadHash sql.NullString
+	var title, status, deleted, workspace, eventID, plain, markdown, summaryText, summaryMarkdown, source, payloadHash, deletionSource, deletionReason sql.NullString
 	var created, updated, seen string
-	if err := scanner.Scan(&n.ID, &title, &n.Type, &status, &created, &updated, &deleted, &workspace, &eventID, &plain, &markdown, &summaryText, &summaryMarkdown, &source, &payloadHash, &seen); err != nil {
+	if err := scanner.Scan(&n.ID, &title, &n.Type, &status, &created, &updated, &deleted, &workspace, &eventID, &plain, &markdown, &summaryText, &summaryMarkdown, &source, &payloadHash, &seen, &deletionSource, &deletionReason); err != nil {
 		return model.Note{}, err
 	}
 	n.Title = stringPtr(title)
@@ -102,6 +105,8 @@ func scanNote(scanner noteScanner) (model.Note, error) {
 	n.SummaryMarkdown = stringPtr(summaryMarkdown)
 	n.Source = model.Source(source.String)
 	n.PayloadHash = payloadHash.String
+	n.DeletionSource = deletionSource.String
+	n.DeletionReason = deletionReason.String
 	n.CreatedAt, _ = time.Parse(time.RFC3339Nano, created)
 	n.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updated)
 	n.LastSeenAt, _ = time.Parse(time.RFC3339Nano, seen)

@@ -103,6 +103,55 @@ func TestRunAcceptsEmptyVersion8DesktopCache(t *testing.T) {
 	}
 }
 
+func TestRunDesktopCacheCascadesExplicitDeletedAtTombstone(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	profile := filepath.Join(root, "Granola")
+	if err := os.MkdirAll(profile, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	raw := `{"cache":{"version":8,"state":{"documents":{"doc1":{"id":"doc1","created_at":"2026-05-06T01:00:00Z","updated_at":"2026-05-06T02:00:00Z","deleted_at":"2026-05-07T03:00:00Z","type":"meeting"}},"transcripts":{"doc1":[{"document_id":"doc1","start_timestamp":"2026-05-06T01:00:01Z","end_timestamp":"2026-05-06T01:00:02Z","text":"retained","source":"microphone","id":"c1","is_final":true}]}}}}`
+	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(raw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	cfg := config.Config{
+		Granola: config.GranolaConfig{ProfilePath: profile, AllowDesktopCache: true},
+		Sync:    config.SyncConfig{DefaultLimit: 100, IncludeTranscripts: true},
+	}
+	result, err := Run(ctx, cfg, st, Options{Source: model.SourceDesktopCache})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Deleted != 1 {
+		t.Fatalf("deleted = %d, want 1", result.Deleted)
+	}
+	note, ok, err := st.GetNote(ctx, "doc1")
+	if err != nil || !ok || note.DeletedAt == nil {
+		t.Fatalf("note tombstone: ok=%v err=%v note=%#v", ok, err, note)
+	}
+	if note.DeletionSource != string(model.SourceDesktopCache) || note.DeletionReason != store.DeletionReasonSourceField {
+		t.Fatalf("note deletion metadata: %#v", note)
+	}
+	chunks, err := st.ListTranscript(ctx, "doc1")
+	if err != nil || len(chunks) != 1 || chunks[0].DeletedAt == nil {
+		t.Fatalf("transcript tombstone: chunks=%#v err=%v", chunks, err)
+	}
+	objects, err := st.ListSourceObjects(ctx, "", 10)
+	if err != nil || len(objects) != 2 {
+		t.Fatalf("source tombstones: objects=%#v err=%v", objects, err)
+	}
+	for _, object := range objects {
+		if object.DeletedAt == nil || object.DeletionSource != string(model.SourceDesktopCache) {
+			t.Fatalf("source object not tombstoned: %#v", object)
+		}
+	}
+}
+
 func TestRunExplainsEncryptedOnlyDesktopCache(t *testing.T) {
 	ctx := context.Background()
 	root := t.TempDir()

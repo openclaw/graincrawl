@@ -17,7 +17,7 @@ func (s *Store) SearchNotes(ctx context.Context, query string, limit int) ([]mod
 SELECT DISTINCT notes.id, notes.title, notes.type, notes.status, notes.created_at, notes.updated_at,
   notes.deleted_at, notes.workspace_id, notes.calendar_event_id, notes.notes_plain,
   notes.notes_markdown, notes.summary_text, notes.summary_markdown, notes.source,
-  notes.payload_hash, notes.last_seen_at
+  notes.payload_hash, notes.last_seen_at, notes.deletion_source, notes.deletion_reason
 FROM notes
 LEFT JOIN transcript_chunks ON transcript_chunks.document_id = notes.id
 LEFT JOIN document_panels ON document_panels.document_id = notes.id

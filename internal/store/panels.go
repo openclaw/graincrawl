@@ -13,8 +13,11 @@ func (s *Store) UpsertPanel(ctx context.Context, panel model.Panel) error {
 INSERT INTO document_panels (
   id, document_id, title, template_slug, content_plain, content_markdown,
   content_json, created_at, updated_at, last_viewed_at, ydoc_version,
-  ydoc_cached_at, source
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ydoc_cached_at, source, deleted_at, deletion_source, deletion_reason
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+  COALESCE(?, (SELECT deleted_at FROM notes WHERE id = ?)),
+  COALESCE(?, (SELECT deletion_source FROM notes WHERE id = ?)),
+  COALESCE(?, (SELECT deletion_reason FROM notes WHERE id = ?)))
 ON CONFLICT(id) DO UPDATE SET
   document_id=excluded.document_id,
   title=excluded.title,
@@ -27,11 +30,17 @@ ON CONFLICT(id) DO UPDATE SET
   last_viewed_at=excluded.last_viewed_at,
   ydoc_version=excluded.ydoc_version,
   ydoc_cached_at=excluded.ydoc_cached_at,
-  source=excluded.source`,
+  source=excluded.source,
+  deleted_at=COALESCE(document_panels.deleted_at, excluded.deleted_at),
+  deletion_source=COALESCE(document_panels.deletion_source, excluded.deletion_source),
+  deletion_reason=COALESCE(document_panels.deletion_reason, excluded.deletion_reason)`,
 		panel.ID, panel.DocumentID, panel.Title, panel.TemplateSlug, panel.ContentPlain,
 		panel.ContentMarkdown, panel.ContentJSON, panel.CreatedAt.Format(time.RFC3339Nano),
 		timePtr(panel.UpdatedAt), timePtr(panel.LastViewedAt), panel.YdocVersion,
-		timePtr(panel.YdocCachedAt), string(panel.Source))
+		timePtr(panel.YdocCachedAt), string(panel.Source),
+		timePtr(panel.DeletedAt), panel.DocumentID,
+		nullableString(panel.DeletionSource), panel.DocumentID,
+		nullableString(panel.DeletionReason), panel.DocumentID)
 	return err
 }
 
@@ -39,7 +48,7 @@ func (s *Store) ListPanels(ctx context.Context, documentID string) ([]model.Pane
 	rows, err := s.DB().QueryContext(ctx, `
 SELECT id, document_id, title, template_slug, content_plain, content_markdown,
   content_json, created_at, updated_at, last_viewed_at, ydoc_version,
-  ydoc_cached_at, source
+  ydoc_cached_at, source, deleted_at, deletion_source, deletion_reason
 FROM document_panels
 WHERE document_id = ?
 ORDER BY created_at DESC`, documentID)
@@ -60,10 +69,10 @@ ORDER BY created_at DESC`, documentID)
 
 func scanPanel(rows *sql.Rows) (model.Panel, error) {
 	var p model.Panel
-	var title, slug, plain, markdown, updated, viewed, cached, source sql.NullString
+	var title, slug, plain, markdown, updated, viewed, cached, source, deleted, deletionSource, deletionReason sql.NullString
 	var ydoc sql.NullInt64
 	var created string
-	if err := rows.Scan(&p.ID, &p.DocumentID, &title, &slug, &plain, &markdown, &p.ContentJSON, &created, &updated, &viewed, &ydoc, &cached, &source); err != nil {
+	if err := rows.Scan(&p.ID, &p.DocumentID, &title, &slug, &plain, &markdown, &p.ContentJSON, &created, &updated, &viewed, &ydoc, &cached, &source, &deleted, &deletionSource, &deletionReason); err != nil {
 		return model.Panel{}, err
 	}
 	p.Title = stringPtr(title)
@@ -75,6 +84,9 @@ func scanPanel(rows *sql.Rows) (model.Panel, error) {
 	p.UpdatedAt = parseNullableTime(updated)
 	p.LastViewedAt = parseNullableTime(viewed)
 	p.YdocCachedAt = parseNullableTime(cached)
+	p.DeletedAt = parseNullableTime(deleted)
+	p.DeletionSource = deletionSource.String
+	p.DeletionReason = deletionReason.String
 	if ydoc.Valid {
 		p.YdocVersion = &ydoc.Int64
 	}

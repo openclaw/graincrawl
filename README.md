@@ -81,6 +81,7 @@ graincrawl secrets
 graincrawl export markdown --out ./granola-notes
 graincrawl snapshot create --out ./graincrawl-snapshot
 graincrawl import ./graincrawl-snapshot
+graincrawl import --replace ./graincrawl-snapshot
 graincrawl tui
 graincrawl completion zsh
 ```
@@ -92,6 +93,10 @@ dashboards.
 
 `graincrawl snapshot create` and `graincrawl import` use `crawlkit/snapshot` so
 archives can move between machines without touching the live Granola profile.
+Imports merge into the local archive by default. Use `graincrawl import
+--replace <snapshot-dir>` only for an explicit exact restore that removes rows
+not present in the snapshot. Merge mode keeps existing local payloads on
+identity conflicts while preserving any tombstone found on either side.
 
 `graincrawl tui` uses `crawlkit/tui` over archived notes. The detail pane is
 fed from SQLite, including note text, transcript chunks, panels, and retained

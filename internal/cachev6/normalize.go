@@ -25,7 +25,7 @@ func NoteFromDocument(doc Document, now time.Time) (model.Note, error) {
 	if noteType == "" {
 		noteType = "meeting"
 	}
-	return model.Note{
+	note := model.Note{
 		ID:            doc.ID,
 		Title:         doc.Title,
 		Type:          noteType,
@@ -39,7 +39,12 @@ func NoteFromDocument(doc Document, now time.Time) (model.Note, error) {
 		Source:        model.SourceDesktopCache,
 		PayloadHash:   hashutil.JSON(doc),
 		LastSeenAt:    now,
-	}, nil
+	}
+	if deleted != nil {
+		note.DeletionSource = string(model.SourceDesktopCache)
+		note.DeletionReason = "source-deleted-at"
+	}
+	return note, nil
 }
 
 func TranscriptFromCache(chunk TranscriptChunk) (model.TranscriptChunk, error) {

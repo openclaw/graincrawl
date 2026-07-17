@@ -21,5 +21,6 @@ type Result struct {
 	Notes       int          `json:"notes"`
 	Transcripts int          `json:"transcripts"`
 	Panels      int          `json:"panels"`
+	Deleted     int          `json:"deleted"`
 	Message     string       `json:"message,omitempty"`
 }

@@ -1,6 +1,6 @@
 package store
 
-const SchemaVersion = 1
+const SchemaVersion = 2
 
 const Schema = `
 CREATE TABLE IF NOT EXISTS source_objects (
@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS source_objects (
   payload_json TEXT NOT NULL,
   payload_hash TEXT NOT NULL,
   observed_at TEXT NOT NULL,
+  deleted_at TEXT,
+  deletion_source TEXT,
+  deletion_reason TEXT,
   PRIMARY KEY (source, kind, source_id)
 );
 
@@ -22,6 +25,8 @@ CREATE TABLE IF NOT EXISTS notes (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   deleted_at TEXT,
+  deletion_source TEXT,
+  deletion_reason TEXT,
   workspace_id TEXT,
   calendar_event_id TEXT,
   notes_plain TEXT,
@@ -42,7 +47,10 @@ CREATE TABLE IF NOT EXISTS transcript_chunks (
   is_final INTEGER NOT NULL,
   transcriber_user_id TEXT,
   text TEXT NOT NULL,
-  payload_hash TEXT
+  payload_hash TEXT,
+  deleted_at TEXT,
+  deletion_source TEXT,
+  deletion_reason TEXT
 );
 
 CREATE TABLE IF NOT EXISTS document_panels (
@@ -58,7 +66,10 @@ CREATE TABLE IF NOT EXISTS document_panels (
   last_viewed_at TEXT,
   ydoc_version INTEGER,
   ydoc_cached_at TEXT,
-  source TEXT NOT NULL
+  source TEXT NOT NULL,
+  deleted_at TEXT,
+  deletion_source TEXT,
+  deletion_reason TEXT
 );
 
 CREATE TABLE IF NOT EXISTS sync_runs (

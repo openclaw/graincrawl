@@ -81,6 +81,7 @@ func syncPrivateWithMessage(ctx context.Context, client privateapi.Client, st *s
 		all = mergeHydratedDocuments(all, hydrated.Docs)
 	}
 	now := time.Now().UTC()
+	deletedDocuments := make(map[string]struct{})
 	for _, doc := range all {
 		if err := retainSourceObject(ctx, st, source, "document", doc.ID, doc.ID, doc, now); err != nil {
 			return result, err
@@ -128,10 +129,47 @@ func syncPrivateWithMessage(ctx context.Context, client privateapi.Client, st *s
 					if err := st.UpsertPanel(ctx, modelPanel); err != nil {
 						return result, err
 					}
+					if modelPanel.DeletedAt != nil {
+						if err := st.TombstoneSourceObject(ctx, source, "panel", panel.ID, store.Deletion{
+							At:     *modelPanel.DeletedAt,
+							Source: source,
+							Reason: store.DeletionReasonSourceField,
+						}); err != nil {
+							return result, err
+						}
+					}
 					result.Panels++
 				}
 			}
 		}
+		if note.DeletedAt != nil {
+			if err := st.TombstoneDocument(ctx, doc.ID, store.Deletion{
+				At:     *note.DeletedAt,
+				Source: source,
+				Reason: store.DeletionReasonSourceField,
+			}); err != nil {
+				return result, err
+			}
+			deletedDocuments[doc.ID] = struct{}{}
+			result.Deleted++
+		}
+	}
+	for _, documentID := range docs.Deleted {
+		if documentID == "" {
+			continue
+		}
+		if _, ok := deletedDocuments[documentID]; ok {
+			continue
+		}
+		if err := st.TombstoneDocument(ctx, documentID, store.Deletion{
+			At:     now,
+			Source: source,
+			Reason: store.DeletionReasonExplicitFeed,
+		}); err != nil {
+			return result, err
+		}
+		deletedDocuments[documentID] = struct{}{}
+		result.Deleted++
 	}
 	completed := time.Now().UTC()
 	_, _ = st.InsertSyncRun(ctx, model.SyncRun{Source: source, StartedAt: started, CompletedAt: completed, Status: "ok", Notes: result.Notes, Transcripts: result.Transcripts, Panels: result.Panels, Message: result.Message})

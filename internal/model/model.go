@@ -21,6 +21,8 @@ type Note struct {
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	DeletedAt       *time.Time `json:"deleted_at,omitempty"`
+	DeletionSource  string     `json:"deletion_source,omitempty"`
+	DeletionReason  string     `json:"deletion_reason,omitempty"`
 	WorkspaceID     *string    `json:"workspace_id,omitempty"`
 	CalendarEventID *string    `json:"calendar_event_id,omitempty"`
 	NotesPlain      *string    `json:"notes_plain,omitempty"`
@@ -33,15 +35,18 @@ type Note struct {
 }
 
 type TranscriptChunk struct {
-	ID                string    `json:"id"`
-	DocumentID        string    `json:"document_id"`
-	StartTimestamp    time.Time `json:"start_timestamp"`
-	EndTimestamp      time.Time `json:"end_timestamp"`
-	Source            string    `json:"source"`
-	IsFinal           bool      `json:"is_final"`
-	TranscriberUserID *string   `json:"transcriber_user_id,omitempty"`
-	Text              string    `json:"text"`
-	PayloadHash       string    `json:"payload_hash,omitempty"`
+	ID                string     `json:"id"`
+	DocumentID        string     `json:"document_id"`
+	StartTimestamp    time.Time  `json:"start_timestamp"`
+	EndTimestamp      time.Time  `json:"end_timestamp"`
+	Source            string     `json:"source"`
+	IsFinal           bool       `json:"is_final"`
+	TranscriberUserID *string    `json:"transcriber_user_id,omitempty"`
+	Text              string     `json:"text"`
+	PayloadHash       string     `json:"payload_hash,omitempty"`
+	DeletedAt         *time.Time `json:"deleted_at,omitempty"`
+	DeletionSource    string     `json:"deletion_source,omitempty"`
+	DeletionReason    string     `json:"deletion_reason,omitempty"`
 }
 
 type Panel struct {
@@ -58,6 +63,9 @@ type Panel struct {
 	YdocVersion     *int64     `json:"ydoc_version,omitempty"`
 	YdocCachedAt    *time.Time `json:"ydoc_cached_at,omitempty"`
 	Source          Source     `json:"source"`
+	DeletedAt       *time.Time `json:"deleted_at,omitempty"`
+	DeletionSource  string     `json:"deletion_source,omitempty"`
+	DeletionReason  string     `json:"deletion_reason,omitempty"`
 }
 
 type SyncRun struct {

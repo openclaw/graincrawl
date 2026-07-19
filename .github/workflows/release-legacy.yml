@@ -1,4 +1,7 @@
-name: Release Validation
+name: Release Validation (legacy manual)
+
+# Legacy credential-free snapshot validation only. Official releases use
+# release-unified.yml and the reusable OpenClaw release pipeline.
 
 on:
   workflow_dispatch:

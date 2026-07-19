@@ -1,8 +1,22 @@
 # Changelog
 
-## Unreleased
+## v0.3.3 - 2026-07-18
 
-- Preserve explicit Granola deletions as note, transcript, panel, and source-object tombstones, and make portable snapshot imports merge by default with explicit `--replace` restores.
+### Highlights
+
+- Preserve explicit Granola deletions as durable tombstones across notes, transcripts, panels, and source objects.
+
+### Snapshots
+
+- Make portable snapshot imports merge by default, retaining destination-only records and local conflict winners; keep `--replace` for explicit exact restores.
+
+### Dependencies
+
+- Update CrawlKit to v0.14.3 and refresh its SQLite runtime dependencies.
+
+### Release engineering
+
+- Ship the first notarized macOS release through the unified OpenClaw pipeline, with `.deb` and `.rpm` packages bound into the verified asset inventory.
 
 ## v0.3.2 - 2026-07-09
 

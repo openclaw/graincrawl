@@ -107,9 +107,10 @@ source metadata.
 Releases use GoReleaser for GitHub release assets and Linux packages, plus a
 source-built Homebrew formula in `openclaw/tap`.
 
-Official macOS archives are signed with the OpenClaw Foundation Developer ID
-before publication. Source builds and snapshot releases remain unsigned and do
-not require release credentials.
+Official macOS archives are signed with the OpenClaw Foundation Developer ID,
+notarized by Apple, and independently verified before publication. Source
+builds and snapshot releases remain unsigned and do not require release
+credentials.
 
 `graincrawl` checks for new GitHub releases at most once every 24 hours during
 interactive CLI use and prints a short upgrade hint when a newer version is

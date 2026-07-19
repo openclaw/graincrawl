@@ -5,7 +5,8 @@ project_name: graincrawl
 builds:
   - id: graincrawl
     main: ./cmd/graincrawl
-    binary: graincrawl
+    binary: "{{ .Os }}_{{ .Arch }}/graincrawl"
+    no_unique_dist_dir: true
     env:
       - CGO_ENABLED=0
     goos:
@@ -30,6 +31,7 @@ archives:
     ids:
       - graincrawl
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    strip_binary_directory: true
     files:
       - README.md
       - LICENSE
@@ -63,10 +65,13 @@ nfpms:
     formats:
       - deb
       - rpm
-    bindir: /usr/bin
+    bindir: /usr/lib/graincrawl
     section: utils
     priority: optional
     contents:
+      - src: "/usr/lib/graincrawl/{{ .Os }}_{{ .Arch }}/graincrawl"
+        dst: /usr/bin/graincrawl
+        type: symlink
       - src: ./README.md
         dst: /usr/share/doc/graincrawl/README.md
       - src: ./LICENSE

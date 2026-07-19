@@ -1,8 +1,10 @@
-name: Release Assets
+name: Release Assets (legacy manual)
+
+# Legacy verification for locally assembled releases with per-archive checksum
+# sidecars. Unified releases are verified before publication by the reusable
+# release pipeline and emit one inventory-bound SHA256SUMS file instead.
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag_name:
@@ -25,7 +27,7 @@ jobs:
             arch: amd64
     runs-on: ${{ matrix.runs-on }}
     env:
-      RELEASE_TAG: ${{ inputs.tag_name || github.event.release.tag_name }}
+      RELEASE_TAG: ${{ inputs.tag_name }}
     steps:
       - name: Checkout trusted verifier
         uses: actions/checkout@v7

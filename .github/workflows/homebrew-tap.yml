@@ -1,15 +1,9 @@
-name: Update Homebrew Tap
+name: Update Homebrew Tap (legacy manual)
+
+# Manual fallback only. The unified release pipeline dispatches the tap with
+# exact inventory-derived asset names and SHA-256 digests.
 
 on:
-  workflow_call:
-    inputs:
-      tag_name:
-        description: "Release tag to sync (for example: v0.1.0)"
-        required: true
-        type: string
-  release:
-    types:
-      - published
   workflow_dispatch:
     inputs:
       tag_name:
@@ -26,7 +20,7 @@ env:
 jobs:
   update-tap:
     runs-on: ubuntu-latest
-    if: startsWith(github.event.release.tag_name || inputs.tag_name, 'v')
+    if: startsWith(inputs.tag_name, 'v')
     env:
       TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO || 'openclaw/homebrew-tap' }}
       FORMULA: graincrawl
@@ -34,7 +28,7 @@ jobs:
       - name: Resolve release tag
         run: |
           set -euo pipefail
-          release_tag="${{ github.event.release.tag_name || inputs.tag_name }}"
+          release_tag="${{ inputs.tag_name }}"
           if [[ ! "${release_tag}" =~ ^v[0-9A-Za-z._-]+$ ]]; then
             echo "::error::Invalid release tag: ${release_tag}"
             exit 1

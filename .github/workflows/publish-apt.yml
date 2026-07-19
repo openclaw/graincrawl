@@ -23,18 +23,53 @@ jobs:
             exit 1
           fi
 
-      - name: Download release .deb assets
+      - name: Download and verify release .deb assets
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag_name }}
         run: |
           set -euo pipefail
+          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+            echo "Invalid release tag: ${TAG}"
+            exit 1
+          fi
           mkdir -p dist
           gh release download "${TAG}" \
             --repo "${GITHUB_REPOSITORY}" \
             --pattern "*.deb" \
             --dir dist
-          ls -1 dist/*.deb >/dev/null
+          if gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" --pattern "ASSET-INVENTORY.json" --dir dist >/dev/null 2>&1 && \
+             gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" --pattern "SHA256SUMS" --dir dist >/dev/null 2>&1; then
+            checksum_file=dist/SHA256SUMS
+            unified_release=true
+          else
+            gh release download "${TAG}" --repo "${GITHUB_REPOSITORY}" --pattern "sha256sums.txt" --dir dist
+            checksum_file=dist/sha256sums.txt
+            unified_release=false
+          fi
+          shopt -s nullglob
+          packages=(dist/*.deb)
+          ((${#packages[@]} > 0)) || { echo "No Debian packages found"; exit 1; }
+          for package in "${packages[@]}"; do
+            name=$(basename "${package}")
+            expected=$(awk -v name="${name}" '$2 == name { print $1 }' "${checksum_file}")
+            actual=$(sha256sum "${package}" | awk '{ print $1 }')
+            [[ "${expected}" =~ ^[0-9a-f]{64}$ && "${actual}" == "${expected}" ]] || {
+              echo "SHA-256 mismatch for ${name}"
+              exit 1
+            }
+            if [[ "${unified_release}" == true ]]; then
+              inventory_digest=$(jq -r --arg name "${name}" '
+                .payloads[] |
+                select(.name == $name and .kind == "nfpm" and .packageFormat == "deb") |
+                .sha256
+              ' dist/ASSET-INVENTORY.json)
+              [[ "${inventory_digest}" == "${expected}" ]] || {
+                echo "${name} is not the verified Debian package in ASSET-INVENTORY.json"
+                exit 1
+              }
+            fi
+          done
 
       - name: Install Cloudsmith CLI
         run: |

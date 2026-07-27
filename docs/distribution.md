@@ -67,9 +67,12 @@ gh workflow run publish-rpm.yml -f tag_name=v0.3.3
 `release-legacy.yml`, `release-assets.yml`, and `homebrew-tap.yml` are
 manual-only fallbacks. They exist to validate or recover releases made by the
 old local signing path and never trigger from tags or release publication.
-`make release-artifacts` and `scripts/verify-graincrawl-release.sh` retain that
-legacy format, including its per-archive `.sha256` sidecars; they are not the
-official unified release path.
+`make release-artifacts` and `scripts/package-graincrawl-release.sh` fail closed
+and point maintainers to `release-unified.yml`; the former local path could sign
+macOS binaries without notarizing them. Use `make release-snapshot` for local,
+credential-free packaging. `scripts/verify-graincrawl-release.sh` remains
+available for inspecting legacy archives and their per-archive `.sha256`
+sidecars, but it is not a publishing path.
 
 ## Secrets
 

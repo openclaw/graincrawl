@@ -17,8 +17,5 @@ boundary.
 Run before handoff:
 
 ```bash
-go mod tidy
-git diff --exit-code -- go.mod go.sum
-go vet ./...
-go test ./...
+make check
 ```

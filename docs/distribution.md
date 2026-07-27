@@ -6,11 +6,7 @@ Cloudsmith APT/RPM repositories.
 ## Local Checks
 
 ```bash
-GOWORK=off go mod tidy
-git diff --exit-code -- go.mod go.sum
-GOWORK=off go vet ./...
-GOWORK=off go test -count=1 ./...
-make smoke
+make check
 graincrawl check-update --json
 ```
 
@@ -18,14 +14,15 @@ The smoke target uses temp `HOME`, temp XDG dirs, temp config, temp cache, and a
 temp SQLite database. Do not run distribution checks against a live personal
 archive.
 
-If GoReleaser is installed:
+For credential-free development artifacts:
 
 ```bash
-make release-snapshot
+make snapshot
 ```
 
 That creates local snapshot archives, checksums, `.deb`, and `.rpm` packages
-under `dist/` without publishing or requiring signing credentials.
+under `dist/` without publishing or requiring signing credentials. The target
+uses a pinned GoReleaser module version, so Go can fetch the tool when needed.
 
 ## Unified Release
 
@@ -34,7 +31,9 @@ fleet release pipeline pinned to its compatible `@v1` contract. Dispatch it
 from the protected `main` head with the changelog version already prepared:
 
 ```bash
-gh workflow run release-unified.yml -f version=0.3.3
+make release
+# release refuses locally and prints:
+gh workflow run release-unified.yml --repo openclaw/graincrawl -f version=X.Y.Z
 ```
 
 The pipeline freezes an annotated `v0.3.3` tag, runs the GoReleaser matrix,
@@ -67,12 +66,14 @@ gh workflow run publish-rpm.yml -f tag_name=v0.3.3
 `release-legacy.yml`, `release-assets.yml`, and `homebrew-tap.yml` are
 manual-only fallbacks. They exist to validate or recover releases made by the
 old local signing path and never trigger from tags or release publication.
-`make release-artifacts` and `scripts/package-graincrawl-release.sh` fail closed
-and point maintainers to `release-unified.yml`; the former local path could sign
-macOS binaries without notarizing them. Use `make release-snapshot` for local,
-credential-free packaging. `scripts/verify-graincrawl-release.sh` remains
+`make release-artifacts` remains an alias for the fail-closed `release` target,
+and `scripts/package-graincrawl-release.sh` also points maintainers to
+`release-unified.yml`; the former local path could sign macOS binaries without
+notarizing them. `make release-snapshot` remains an alias for the credential-free
+`snapshot` target. `make verify-release TAG=vX.Y.Z ARCHIVES='path ...'` remains
 available for inspecting legacy archives and their per-archive `.sha256`
-sidecars, but it is not a publishing path.
+sidecars, including Apple notarization assessment, but it is not a publishing
+path.
 
 ## Secrets
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Standardize maintainer Make targets, keep local release commands fail-closed on unified CI, and require notarization when verifying legacy macOS archives.
+
 ## v0.3.5 - 2026-07-26
 
 - Re-release v0.3.4's content through the official signed and notarized release pipeline; v0.3.4's macOS archives were signed but not notarized.

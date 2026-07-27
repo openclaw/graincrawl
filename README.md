@@ -17,8 +17,8 @@ browser over the archived SQLite data.
 - export notes to Markdown
 - browse archived notes with the shared crawlkit TUI
 - create/import portable crawlkit snapshots
-- explicitly unlock encrypted JSON for in-memory cache import or private API
-  authentication; keep OPFS unsupported
+- explicitly unlock legacy encrypted JSON when `storage.dek` is still present;
+  keep OPFS unsupported
 
 ## Install
 
@@ -134,3 +134,18 @@ to Granola. OPFS remains unsupported. Ordinary `doctor`, `status`, `notes`,
 `export`, and `tui` commands never prompt Keychain.
 
 See [docs/security.md](docs/security.md).
+
+### Granola 7.427+ encrypted state
+
+Granola 7.427+ moved its data-encryption key into the macOS data-protection
+Keychain under the app-scoped access group `QZ7DHHLN25.granola`. Only code
+signed by Granola's team can read that item, so graincrawl cannot decrypt the
+local Granola state after this migration. In this state `unlock encrypted-json`
+is always blocked, and `private-api` or `desktop-cache` is blocked only when the
+state that source itself needs is encrypted — a source whose plaintext file is
+still readable keeps working. Existing data already archived by graincrawl
+remains readable.
+
+`graincrawl doctor` detects the migration from the profile state: `storage.dek`
+is absent while at least one `*.enc` file is present. This is an upstream
+Keychain access boundary, not a graincrawl bug.

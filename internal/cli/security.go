@@ -22,7 +22,8 @@ func (a App) runSources(ctx context.Context, w io.Writer, flags GlobalFlags) err
 		return err
 	}
 	defer rt.Close()
-	sources := security.Sources(rt.Config)
+	paths := granola.Paths(rt.Config.Granola.ProfilePath, rt.Config.Granola.AppPath)
+	sources := security.Sources(rt.Config, paths)
 	if flags.JSON {
 		return output.WriteEnvelope(w, map[string]any{"sources": sources})
 	}
@@ -52,7 +53,8 @@ func (a App) runUnlock(ctx context.Context, w io.Writer, flags GlobalFlags, args
 		}
 		return a.runEncryptedJSONUnlock(ctx, w, flags, rt.Config)
 	}
-	report := security.Unlock(rt.Config)
+	paths := granola.Paths(rt.Config.Granola.ProfilePath, rt.Config.Granola.AppPath)
+	report := security.Unlock(rt.Config, granola.PostMigrationState(paths))
 	if flags.JSON {
 		return output.WriteEnvelope(w, report)
 	}
@@ -64,13 +66,16 @@ func (a App) runUnlock(ctx context.Context, w io.Writer, flags GlobalFlags, args
 }
 
 func (a App) runEncryptedJSONUnlock(ctx context.Context, w io.Writer, flags GlobalFlags, cfg config.Config) error {
+	paths := granola.Paths(cfg.Granola.ProfilePath, cfg.Granola.AppPath)
+	if granola.PostMigrationState(paths) {
+		return fmt.Errorf("encrypted-json unlock is blocked: %s", granola.PostMigrationStateMessage)
+	}
 	if !cfg.Granola.AllowEncryptedJSON {
 		return fmt.Errorf("encrypted-json source disabled in config")
 	}
 	if !security.PromptAllowed(cfg.Security.KeychainPromptMode) {
 		return fmt.Errorf("keychain prompt mode %q blocks encrypted-json unlock", cfg.Security.KeychainPromptMode)
 	}
-	paths := granola.Paths(cfg.Granola.ProfilePath, cfg.Granola.AppPath)
 	names := make([]string, 0, 2)
 	if _, err := os.Stat(paths.CacheV6Encrypted); err == nil {
 		names = append(names, encryptedjson.CacheFile)

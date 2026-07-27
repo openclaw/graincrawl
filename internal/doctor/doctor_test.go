@@ -48,6 +48,43 @@ func TestRunReportsEncryptedOnlyGranolaState(t *testing.T) {
 	}
 }
 
+func TestRunReportsPostMigrationStateWithGranolaVersion(t *testing.T) {
+	root := t.TempDir()
+	profile := filepath.Join(root, "Granola")
+	appPath := filepath.Join(root, "Granola.app")
+	if err := os.MkdirAll(filepath.Join(appPath, "Contents"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	plist := `<?xml version="1.0"?><plist><dict><key>CFBundleShortVersionString</key><string>7.441.6</string><key>CFBundleIdentifier</key><string>com.granola.app</string></dict></plist>`
+	if err := os.WriteFile(filepath.Join(appPath, "Contents", "Info.plist"), []byte(plist), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(profile, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(profile, "stored-accounts.json.enc"), []byte("encrypted"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	report := Run(config.Config{
+		Granola: config.GranolaConfig{ProfilePath: profile, AppPath: appPath},
+	}, "/tmp/graincrawl.toml", time.Now())
+	if !report.Unlock.PostMigrationState {
+		t.Fatal("expected post-migration state")
+	}
+	if len(report.Diagnostics) != 1 {
+		t.Fatalf("expected one diagnostic, got %#v", report.Diagnostics)
+	}
+	diagnostic := report.Diagnostics[0]
+	if diagnostic.Code != "granola_dek_keychain_migration" || diagnostic.Severity != "error" {
+		t.Fatalf("unexpected diagnostic metadata: %#v", diagnostic)
+	}
+	want := granola.PostMigrationStateMessage + " Detected Granola version 7.441.6."
+	if diagnostic.Message != want {
+		t.Fatalf("diagnostic = %q, want %q", diagnostic.Message, want)
+	}
+}
+
 func TestRunReportsEncryptedOnlyCacheState(t *testing.T) {
 	profile := filepath.Join(t.TempDir(), "Granola")
 	if err := os.MkdirAll(profile, 0o700); err != nil {

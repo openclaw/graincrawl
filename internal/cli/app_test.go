@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/granola"
 	"github.com/openclaw/graincrawl/internal/model"
 	"github.com/openclaw/graincrawl/internal/store"
 )
@@ -124,6 +125,117 @@ func TestAppReportsEncryptedOnlyGranolaState(t *testing.T) {
 	}
 	if !strings.Contains(unlockOut.String(), "disabled") || strings.Contains(unlockOut.String(), "keychain_accessed") {
 		t.Fatalf("unlock status should remain prompt-free when disabled:\n%s", unlockOut.String())
+	}
+}
+
+func TestAppBlocksPostMigrationGranolaState(t *testing.T) {
+	cfgPath := writeTestConfig(t)
+	cfg, _, err := config.Load(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Granola.AllowEncryptedJSON = true
+	cfg.Security.KeychainPromptMode = "explicit"
+	if err := config.Save(cfgPath, cfg); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(cfg.Granola.ProfilePath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"cache-v6.json.enc", "supabase.json.enc"} {
+		if err := os.WriteFile(filepath.Join(cfg.Granola.ProfilePath, name), []byte("encrypted"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	decryptCalls := 0
+	app := App{
+		DecryptEncryptedJSON: func(context.Context, string, ...string) (map[string]json.RawMessage, error) {
+			decryptCalls++
+			return nil, nil
+		},
+	}
+
+	for _, command := range [][]string{
+		{"--json", "--config", cfgPath, "doctor"},
+		{"--config", cfgPath, "doctor"},
+		{"--json", "--config", cfgPath, "unlock"},
+		{"--config", cfgPath, "unlock"},
+	} {
+		var out bytes.Buffer
+		app.Stdout = &out
+		if err := app.Run(context.Background(), command); err != nil {
+			t.Fatalf("%v failed: %v", command, err)
+		}
+		if !strings.Contains(out.String(), granola.PostMigrationStateMessage) {
+			t.Fatalf("%v output missing migration diagnostic:\n%s", command, out.String())
+		}
+		for _, forbidden := range []string{"explicit encrypted-json unlock", "current plaintext source"} {
+			if strings.Contains(out.String(), forbidden) {
+				t.Fatalf("%v output contains dead-end advice %q:\n%s", command, forbidden, out.String())
+			}
+		}
+	}
+
+	var sourcesOut bytes.Buffer
+	app.Stdout = &sourcesOut
+	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "sources"}); err != nil {
+		t.Fatal(err)
+	}
+	var response struct {
+		Result struct {
+			Sources []struct {
+				Source  model.Source `json:"source"`
+				Allowed bool         `json:"allowed"`
+				Notes   string       `json:"notes"`
+			} `json:"sources"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(sourcesOut.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
+	blocked := map[model.Source]bool{
+		model.SourcePrivateAPI:   false,
+		model.SourceDesktopCache: false,
+	}
+	for _, source := range response.Result.Sources {
+		if _, ok := blocked[source.Source]; !ok {
+			continue
+		}
+		if source.Allowed || source.Notes != granola.PostMigrationStateMessage {
+			t.Fatalf("source support = %#v", source)
+		}
+		blocked[source.Source] = true
+	}
+	for source, seen := range blocked {
+		if !seen {
+			t.Fatalf("sources output did not include blocked %s: %s", source, sourcesOut.String())
+		}
+	}
+
+	for _, command := range [][]string{
+		{"--config", cfgPath, "sync", "--source", "private-api"},
+		{"--config", cfgPath, "sync", "--source", "private-api", "--unlock", "encrypted-json"},
+		{"--config", cfgPath, "sync", "--source", "desktop-cache"},
+		{"--config", cfgPath, "sync", "--source", "desktop-cache", "--unlock", "encrypted-json"},
+		{"--config", cfgPath, "unlock", "encrypted-json"},
+	} {
+		var out bytes.Buffer
+		app.Stdout = &out
+		err := app.Run(context.Background(), command)
+		if err == nil {
+			t.Fatalf("%v succeeded; want nonzero command error", command)
+		}
+		if !strings.Contains(err.Error(), granola.PostMigrationStateMessage) {
+			t.Fatalf("%v error missing migration diagnostic: %v", command, err)
+		}
+		for _, forbidden := range []string{"explicit encrypted-json unlock", "current plaintext source"} {
+			if strings.Contains(err.Error(), forbidden) {
+				t.Fatalf("%v error contains dead-end advice %q: %v", command, forbidden, err)
+			}
+		}
+	}
+	if decryptCalls != 0 {
+		t.Fatalf("post-migration commands invoked decryptor %d times", decryptCalls)
 	}
 }
 

@@ -14,10 +14,6 @@ import (
 )
 
 func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) (Result, error) {
-	decrypt, err := encryptedJSONDecryptor(cfg, opts)
-	if err != nil {
-		return Result{}, err
-	}
 	sourceExplicit := opts.Source != ""
 	if opts.Source == "" {
 		opts.Source = model.Source(cfg.Granola.PreferredSource)
@@ -27,12 +23,38 @@ func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) 
 	}
 	opts.IncludeTranscripts = !opts.SkipTranscripts && (opts.IncludeTranscripts || cfg.Sync.IncludeTranscripts)
 	opts.IncludePanels = !opts.SkipPanels && (opts.IncludePanels || cfg.Sync.IncludePanels)
+	paths := granola.Paths(cfg.Granola.ProfilePath, cfg.Granola.AppPath)
 	switch opts.Source {
 	case model.SourcePrivateAPI:
 		if !cfg.Granola.AllowPrivateAPI {
 			return Result{}, fmt.Errorf("private-api source disabled in config")
 		}
-		encryptedSupabase := granola.EncryptedSupabaseState(granola.Paths(cfg.Granola.ProfilePath, cfg.Granola.AppPath))
+	case model.SourceDesktopCache:
+		if !cfg.Granola.AllowDesktopCache {
+			return Result{}, fmt.Errorf("desktop-cache source disabled in config")
+		}
+	default:
+		return Result{}, fmt.Errorf("source %q is disabled or unsupported in this build", opts.Source)
+	}
+	// Block only the source whose own state is encrypted: an unrelated .enc
+	// file must not hide plaintext this source can still read, and an implicit
+	// private-api request still falls back to a readable desktop cache.
+	if granola.PostMigrationState(paths) && granola.SourceStateEncrypted(paths, opts.Source) {
+		fallback := opts.Source == model.SourcePrivateAPI && !sourceExplicit &&
+			cfg.Granola.AllowDesktopCache && granola.PlaintextSourceStateUsable(paths, model.SourceDesktopCache)
+		if !fallback {
+			result := Result{Source: opts.Source, Message: granola.PostMigrationStateMessage}
+			return result, fmt.Errorf("%s source is blocked: %s", opts.Source, granola.PostMigrationStateMessage)
+		}
+		opts.Source = model.SourceDesktopCache
+	}
+	decrypt, err := encryptedJSONDecryptor(cfg, opts)
+	if err != nil {
+		return Result{}, err
+	}
+	switch opts.Source {
+	case model.SourcePrivateAPI:
+		encryptedSupabase := granola.EncryptedSupabaseState(paths)
 		if encryptedSupabase && decrypt == nil && !sourceExplicit && cfg.Granola.AllowDesktopCache {
 			opts.Source = model.SourceDesktopCache
 			return runDesktopCache(ctx, cfg, st, opts, decrypt)
@@ -41,7 +63,6 @@ func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) 
 			if decrypt == nil {
 				return Result{Source: model.SourcePrivateAPI, Message: granola.EncryptedOnlyStateMessage}, fmt.Errorf("private-api source requires plaintext supabase.json: %s", granola.EncryptedOnlyStateMessage)
 			}
-			paths := granola.Paths(cfg.Granola.ProfilePath, cfg.Granola.AppPath)
 			names := []string{encryptedjson.SupabaseFile}
 			encryptedCacheFallback := !sourceExplicit && cfg.Granola.AllowDesktopCache && granola.EncryptedCacheState(paths)
 			if encryptedCacheFallback {
@@ -78,9 +99,8 @@ func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) 
 		return result, err
 	case model.SourceDesktopCache:
 		return runDesktopCache(ctx, cfg, st, opts, decrypt)
-	default:
-		return Result{}, fmt.Errorf("source %q is disabled or unsupported in this build", opts.Source)
 	}
+	return Result{}, fmt.Errorf("source %q is disabled or unsupported in this build", opts.Source)
 }
 
 func runDesktopCache(ctx context.Context, cfg config.Config, st *store.Store, opts Options, decrypt encryptedjson.DecryptFunc) (Result, error) {

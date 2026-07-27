@@ -2,6 +2,7 @@ package security
 
 import (
 	"github.com/openclaw/graincrawl/internal/config"
+	"github.com/openclaw/graincrawl/internal/granola"
 	"github.com/openclaw/graincrawl/internal/model"
 )
 
@@ -31,8 +32,9 @@ type SecretReport struct {
 	Message            string `json:"message"`
 }
 
-func Sources(cfg config.Config) []SourceSupport {
-	return []SourceSupport{
+func Sources(cfg config.Config, paths granola.ProfilePaths) []SourceSupport {
+	postMigration := granola.PostMigrationState(paths)
+	sources := []SourceSupport{
 		{
 			Source:      model.SourcePrivateAPI,
 			Allowed:     cfg.Granola.AllowPrivateAPI,
@@ -69,18 +71,42 @@ func Sources(cfg config.Config) []SourceSupport {
 			Notes:       "official API is currently limited compared with local archive goals",
 		},
 	}
+	if postMigration {
+		for i := range sources {
+			switch sources[i].Source {
+			case model.SourcePrivateAPI, model.SourceDesktopCache:
+				// Match sync: only the source whose own state is encrypted is
+				// blocked, so advertised support cannot contradict behavior.
+				if !granola.SourceStateEncrypted(paths, sources[i].Source) {
+					continue
+				}
+				sources[i].Allowed = false
+				sources[i].Notes = granola.PostMigrationStateMessage
+			case model.SourceEncryptedJSON:
+				sources[i].Allowed = false
+				sources[i].Notes = granola.PostMigrationStateMessage
+			}
+		}
+	}
+	return sources
 }
 
-func Unlock(cfg config.Config) UnlockReport {
+func Unlock(cfg config.Config, postMigration bool) UnlockReport {
 	mode := cfg.Security.KeychainPromptMode
+	promptAllowed := PromptAllowed(mode)
+	message := unlockMessage(cfg.Granola.AllowEncryptedJSON, cfg.Granola.AllowOPFS, mode)
+	if postMigration {
+		promptAllowed = false
+		message = granola.PostMigrationStateMessage
+	}
 	return UnlockReport{
 		KeychainPromptMode: mode,
 		PersistHelperKeys:  cfg.Security.PersistHelperKeys,
 		EncryptedJSON:      cfg.Granola.AllowEncryptedJSON,
 		OPFS:               cfg.Granola.AllowOPFS,
 		RequiresCompanion:  false,
-		PromptAllowed:      PromptAllowed(mode),
-		Message:            unlockMessage(cfg.Granola.AllowEncryptedJSON, cfg.Granola.AllowOPFS, mode),
+		PromptAllowed:      promptAllowed,
+		Message:            message,
 	}
 }
 

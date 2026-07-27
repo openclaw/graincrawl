@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Detect Granola 7.427+'s app-scoped Keychain migration, fail local sync and unlock with honest diagnostics, and return a nonzero status instead of silently importing nothing. Thanks @nwoonet.
+
 ## v0.3.3 - 2026-07-18
 
 ### Highlights

@@ -203,6 +203,7 @@ func (a App) runDoctor(ctx context.Context, w io.Writer, flags GlobalFlags) erro
 	output.PrintKV(w, "granola_version", report.GranolaApp.Version)
 	output.PrintKV(w, "cache_v6", report.Files.CacheV6.Exists)
 	output.PrintKV(w, "supabase", report.Files.Supabase.Exists)
+	output.PrintKV(w, "post_migration_state", report.Unlock.PostMigrationState)
 	for _, diagnostic := range report.Diagnostics {
 		output.PrintKV(w, "diagnostic", diagnostic.Message)
 	}

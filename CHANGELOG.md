@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## v0.3.6 - 2026-08-01
 
 - Standardize maintainer Make targets, keep local release commands fail-closed on unified CI, and require notarization when verifying legacy macOS archives.

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.3.7 - 2026-08-02
 
 - Fall back to a readable desktop cache when implicit private API sync has no local credentials, while keeping explicit private API failures path-free.
 - Honor trailing `--json` for structured subcommands and searches with an

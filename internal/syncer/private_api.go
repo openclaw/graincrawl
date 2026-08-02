@@ -3,6 +3,7 @@ package syncer
 import (
 	"context"
 	"errors"
+	"os"
 	"time"
 
 	"github.com/openclaw/graincrawl/internal/config"
@@ -21,6 +22,9 @@ func PrivateAPI(ctx context.Context, cfg config.Config, st *store.Store, opts Op
 	paths := granola.Paths(cfg.Granola.ProfilePath, cfg.Granola.AppPath)
 	_, tokens, user, err := granola.ReadSupabase(paths.Supabase)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return Result{}, ErrPrivateAPITokenNotFound
+		}
 		return Result{}, err
 	}
 	return privateAPIWithSession(ctx, cfg, st, opts, tokens, user, "")

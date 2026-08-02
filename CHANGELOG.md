@@ -4,6 +4,7 @@
 
 - Standardize maintainer Make targets, keep local release commands fail-closed on unified CI, and require notarization when verifying legacy macOS archives.
 - Refresh terminal width, syscall, text, and SQLite runtime dependencies.
+- Update CrawlKit, SQLite, vulnerability/dead-code tooling, and GitHub Actions dependencies.
 
 ## v0.3.5 - 2026-07-26
 

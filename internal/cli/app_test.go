@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -498,6 +499,30 @@ func TestAppPreservesFlagLikeCommandArguments(t *testing.T) {
 	}
 	if !strings.Contains(searchOut.String(), "--config") {
 		t.Fatalf("search output lost flag-like query: %s", searchOut.String())
+	}
+}
+
+func TestAppAcceptsGlobalFlagsAfterCommand(t *testing.T) {
+	cfgPath := writeTestConfig(t)
+	var out bytes.Buffer
+	app := App{Stdout: &out}
+
+	if err := app.Run(context.Background(), []string{"--config", cfgPath, "status", "--json"}); err != nil {
+		t.Fatalf("status with trailing --json failed: %v", err)
+	}
+	if !strings.Contains(out.String(), `"schema_version"`) || !strings.Contains(out.String(), `"counts"`) {
+		t.Fatalf("status with trailing --json did not emit JSON: %s", out.String())
+	}
+}
+
+func TestParseGlobalFlagsDoesNotConsumeCommandConfigArgument(t *testing.T) {
+	flags, rest := parseGlobalFlags([]string{"search", "--config", "foo"})
+	if flags.ConfigPath != "" {
+		t.Fatalf("command argument became global config path: %q", flags.ConfigPath)
+	}
+	want := []string{"search", "--config", "foo"}
+	if !slices.Equal(rest, want) {
+		t.Fatalf("command arguments changed: got %q want %q", rest, want)
 	}
 }
 

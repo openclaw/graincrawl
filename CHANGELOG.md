@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fall back to a readable desktop cache when implicit private API sync has no local credentials, while keeping explicit private API failures path-free.
+- Honor trailing `--json` after subcommands, matching the documented examples and crawlkit control manifest.
 
 ## v0.3.6 - 2026-08-01
 

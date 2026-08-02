@@ -28,6 +28,10 @@ func parseGlobalFlags(args []string) (GlobalFlags, []string) {
 			}
 		default:
 			rest = append(rest, args[i:]...)
+			if len(rest) > 1 && rest[len(rest)-1] == "--json" {
+				flags.JSON = true
+				rest = rest[:len(rest)-1]
+			}
 			return flags, rest
 		}
 	}

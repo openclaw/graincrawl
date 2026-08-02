@@ -515,6 +515,59 @@ func TestAppAcceptsGlobalFlagsAfterCommand(t *testing.T) {
 	}
 }
 
+func TestAppPreservesTrailingJSONSearchArgument(t *testing.T) {
+	cfgPath := writeTestConfig(t)
+	var out bytes.Buffer
+	app := App{Stdout: &out}
+
+	if err := app.Run(context.Background(), []string{"--config", cfgPath, "search", "--json"}); err != nil {
+		t.Fatalf("search with literal trailing --json failed: %v", err)
+	}
+}
+
+func TestParseGlobalFlagsPreservesFreeFormJSONArguments(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		wantJSON bool
+		wantRest []string
+	}{
+		{
+			name:     "search literal",
+			args:     []string{"search", "--json"},
+			wantRest: []string{"search", "--json"},
+		},
+		{
+			name:     "search json output prefix",
+			args:     []string{"--json", "search", "--json"},
+			wantJSON: true,
+			wantRest: []string{"search", "--json"},
+		},
+		{
+			name:     "sql trailing argument",
+			args:     []string{"sql", "select 1", "--json"},
+			wantRest: []string{"sql", "select 1", "--json"},
+		},
+		{
+			name:     "sql json output prefix",
+			args:     []string{"--json", "sql", "select 1", "--json"},
+			wantJSON: true,
+			wantRest: []string{"sql", "select 1", "--json"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flags, rest := parseGlobalFlags(tt.args)
+			if flags.JSON != tt.wantJSON {
+				t.Fatalf("JSON flag = %v, want %v", flags.JSON, tt.wantJSON)
+			}
+			if !slices.Equal(rest, tt.wantRest) {
+				t.Fatalf("command arguments changed: got %q want %q", rest, tt.wantRest)
+			}
+		})
+	}
+}
+
 func TestParseGlobalFlagsDoesNotConsumeCommandConfigArgument(t *testing.T) {
 	flags, rest := parseGlobalFlags([]string{"search", "--config", "foo"})
 	if flags.ConfigPath != "" {

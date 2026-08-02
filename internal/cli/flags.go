@@ -28,7 +28,7 @@ func parseGlobalFlags(args []string) (GlobalFlags, []string) {
 			}
 		default:
 			rest = append(rest, args[i:]...)
-			if len(rest) > 1 && rest[len(rest)-1] == "--json" {
+			if acceptsTrailingJSON(rest[0]) && len(rest) > 1 && rest[len(rest)-1] == "--json" {
 				flags.JSON = true
 				rest = rest[:len(rest)-1]
 			}
@@ -36,6 +36,10 @@ func parseGlobalFlags(args []string) (GlobalFlags, []string) {
 		}
 	}
 	return flags, rest
+}
+
+func acceptsTrailingJSON(command string) bool {
+	return command != "search" && command != "sql"
 }
 
 func hasFlag(args []string, name string) bool {

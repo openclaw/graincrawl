@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fall back to a readable desktop cache when implicit private API sync has no local credentials, while keeping explicit private API failures path-free.
+
 ## v0.3.6 - 2026-08-01
 
 - Standardize maintainer Make targets, keep local release commands fail-closed on unified CI, and require notarization when verifying legacy macOS archives.

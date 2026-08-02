@@ -488,6 +488,45 @@ func TestRunFallsBackToDesktopCacheForImplicitExpiredPrivateAPI(t *testing.T) {
 	}
 }
 
+func TestRunFallsBackToDesktopCacheWhenPrivateAPICredentialsAreMissing(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	profile := filepath.Join(root, "Granola")
+	if err := os.MkdirAll(profile, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	cacheRaw := `{"cache":{"version":8,"state":{"documents":{"doc1":{"id":"doc1","created_at":"2026-08-01T01:00:00Z","updated_at":"2026-08-01T02:00:00Z","title":"Synthetic","type":"meeting","notes_plain":"synthetic"}},"transcripts":{}}}}`
+	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(cacheRaw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	cfg := config.Config{
+		Granola: config.GranolaConfig{
+			ProfilePath:       profile,
+			PreferredSource:   "private-api",
+			AllowPrivateAPI:   true,
+			AllowDesktopCache: true,
+		},
+		Sync: config.SyncConfig{DefaultLimit: 100},
+	}
+	result, err := Run(ctx, cfg, st, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Source != model.SourceDesktopCache || result.Notes != 1 {
+		t.Fatalf("expected implicit sync to import the desktop cache, got %#v", result)
+	}
+	if _, err := Run(ctx, cfg, st, Options{Source: model.SourcePrivateAPI}); !errors.Is(err, ErrPrivateAPITokenNotFound) {
+		t.Fatalf("explicit private-api should report missing authentication, got %v", err)
+	} else if strings.Contains(err.Error(), profile) {
+		t.Fatalf("explicit private-api diagnostic exposed the profile path: %v", err)
+	}
+}
+
 func TestRunImportsEncryptedDesktopCacheOnlyWithExplicitUnlock(t *testing.T) {
 	ctx := context.Background()
 	root := t.TempDir()

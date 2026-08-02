@@ -525,6 +525,19 @@ func TestAppPreservesTrailingJSONSearchArgument(t *testing.T) {
 	}
 }
 
+func TestAppAcceptsTrailingJSONAfterSearchQuery(t *testing.T) {
+	cfgPath := writeTestConfig(t)
+	var out bytes.Buffer
+	app := App{Stdout: &out}
+
+	if err := app.Run(context.Background(), []string{"--config", cfgPath, "search", "needle", "--json"}); err != nil {
+		t.Fatalf("search with trailing --json failed: %v", err)
+	}
+	if !strings.Contains(out.String(), `"ok": true`) || !strings.Contains(out.String(), `"notes"`) {
+		t.Fatalf("search with trailing --json did not emit JSON: %s", out.String())
+	}
+}
+
 func TestParseGlobalFlagsPreservesFreeFormJSONArguments(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -542,6 +555,12 @@ func TestParseGlobalFlagsPreservesFreeFormJSONArguments(t *testing.T) {
 			args:     []string{"--json", "search", "--json"},
 			wantJSON: true,
 			wantRest: []string{"search", "--json"},
+		},
+		{
+			name:     "search trailing json output",
+			args:     []string{"search", "needle", "--json"},
+			wantJSON: true,
+			wantRest: []string{"search", "needle"},
 		},
 		{
 			name:     "sql trailing argument",

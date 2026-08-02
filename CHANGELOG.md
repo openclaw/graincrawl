@@ -3,7 +3,8 @@
 ## Unreleased
 
 - Fall back to a readable desktop cache when implicit private API sync has no local credentials, while keeping explicit private API failures path-free.
-- Honor trailing `--json` for structured subcommands while preserving literal `--json` arguments in free-form search and SQL queries.
+- Honor trailing `--json` for structured subcommands and searches with an
+  explicit query, while preserving literal `--json` arguments and free-form SQL.
 - Restore Crabbox validation with a root volume that fits the current AWS
   developer image.
 - Update CrawlKit to v0.14.5 and pick up the corrected `go-colorful` v1.4.1

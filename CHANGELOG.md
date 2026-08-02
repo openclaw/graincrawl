@@ -8,6 +8,8 @@
   developer image.
 - Update CrawlKit to v0.14.5 and pick up the corrected `go-colorful` v1.4.1
   terminal color conversion.
+- Avoid `SQLITE_BUSY` failures when concurrent commands open an archive whose
+  schema is already current.
 
 ## v0.3.6 - 2026-08-01
 

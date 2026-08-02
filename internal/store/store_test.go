@@ -167,6 +167,38 @@ VALUES('private-api', 'document', 'deleted-doc', 'deleted-doc', '{}', 'hash', '2
 	}
 }
 
+func TestOpenCurrentSchemaConcurrently(t *testing.T) {
+	ctx := context.Background()
+	dbPath := filepath.Join(t.TempDir(), "graincrawl.db")
+	st, err := Open(ctx, dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	const workers = 16
+	start := make(chan struct{})
+	errs := make(chan error, workers)
+	for range workers {
+		go func() {
+			<-start
+			st, err := Open(ctx, dbPath)
+			if err == nil {
+				err = st.Close()
+			}
+			errs <- err
+		}()
+	}
+	close(start)
+	for range workers {
+		if err := <-errs; err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func TestChildUpsertsInheritExistingDocumentTombstone(t *testing.T) {
 	ctx := context.Background()
 	st, err := Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))

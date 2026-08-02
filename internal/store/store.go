@@ -31,13 +31,15 @@ func Open(ctx context.Context, path string) (*Store, error) {
 		_ = inner.Close()
 		return nil, fmt.Errorf("database schema version %d is newer than supported version %d", current, SchemaVersion)
 	}
-	if err := ensureDeletionColumns(ctx, inner.DB()); err != nil {
-		_ = inner.Close()
-		return nil, err
-	}
-	if err := inner.EnsureSchemaVersion(ctx, SchemaVersion); err != nil {
-		_ = inner.Close()
-		return nil, err
+	if current < SchemaVersion {
+		if err := ensureDeletionColumns(ctx, inner.DB()); err != nil {
+			_ = inner.Close()
+			return nil, err
+		}
+		if err := inner.EnsureSchemaVersion(ctx, SchemaVersion); err != nil {
+			_ = inner.Close()
+			return nil, err
+		}
 	}
 	return &Store{inner: inner}, nil
 }

@@ -6,6 +6,8 @@
 - Honor trailing `--json` for structured subcommands while preserving literal `--json` arguments in free-form search and SQL queries.
 - Restore Crabbox validation with a root volume that fits the current AWS
   developer image.
+- Update CrawlKit to v0.14.5 and pick up the corrected `go-colorful` v1.4.1
+  terminal color conversion.
 
 ## v0.3.6 - 2026-08-01
 

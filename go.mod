@@ -3,7 +3,7 @@ module github.com/openclaw/graincrawl
 go 1.26.5
 
 require (
-	github.com/openclaw/crawlkit v0.14.4
+	github.com/openclaw/crawlkit v0.14.5
 	github.com/pelletier/go-toml/v2 v2.4.3
 	modernc.org/sqlite v1.55.0
 )
@@ -23,7 +23,7 @@ require (
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/google/pprof v0.0.0-20260802004507-5106ece31595 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.27 // indirect

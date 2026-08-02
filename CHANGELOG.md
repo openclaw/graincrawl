@@ -4,6 +4,8 @@
 
 - Fall back to a readable desktop cache when implicit private API sync has no local credentials, while keeping explicit private API failures path-free.
 - Honor trailing `--json` for structured subcommands while preserving literal `--json` arguments in free-form search and SQL queries.
+- Restore Crabbox validation with a root volume that fits the current AWS
+  developer image.
 
 ## v0.3.6 - 2026-08-01
 

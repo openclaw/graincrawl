@@ -36,6 +36,7 @@ Commands:
 Examples:
   graincrawl doctor --json
   graincrawl sync --source private-api
+  GRAINCRAWL_ALLOW_PUBLIC_API=true GRANOLA_PUBLIC_API_KEY=... graincrawl sync --source public-api
   graincrawl sync --source private-api --unlock encrypted-json
   graincrawl sync --source desktop-cache
   graincrawl unlock encrypted-json

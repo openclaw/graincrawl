@@ -24,13 +24,14 @@ graincrawl [--json] [--config <path>] [--version] <command> [args]
 | `graincrawl sources` | Show which source adapters the current config allows. |
 | `graincrawl sync` | Sync from the configured source; `refresh` is an alias. |
 | `graincrawl sync --source private-api` | Require the private desktop API session. |
+| `graincrawl sync --source public-api` | Use Granola's official API with `GRANOLA_PUBLIC_API_KEY`. |
 | `graincrawl sync --source desktop-cache` | Import the local plaintext desktop cache. |
 | `graincrawl sync --limit <n>` | Limit the number of notes processed. |
 | `graincrawl sync --no-transcripts --no-panels` | Skip transcript and panel hydration for this run. |
 | `graincrawl runs --limit <n>` | List recent sync runs. |
 | `graincrawl status` | Show archive counts and the SQLite path. |
 
-`private-api` and `desktop-cache` are the supported sync sources in this build. The config also names reserved adapters that are not enabled by the current implementation.
+`private-api`, `public-api`, and `desktop-cache` are supported sync sources. `public-api` must be explicitly enabled with `allow_public_api = true` or `GRAINCRAWL_ALLOW_PUBLIC_API=true`; its key is read only from `GRANOLA_PUBLIC_API_KEY`. It archives notes, summaries, and transcripts available to the key, but the official API does not expose panels or deletion events.
 
 ## Read the archive
 
@@ -72,6 +73,8 @@ Merge imports keep existing local payloads on identity conflicts and preserve to
 | `graincrawl version` | Show version, commit, and build date. |
 
 Legacy encrypted JSON requires `allow_encrypted_json = true` and an explicit unlock command or sync flag. Decrypted payloads stay in process memory. The [security model](security.md) documents the Keychain boundary and Granola 7.427+ behavior.
+
+The public API key is never written to graincrawl config or SQLite. Inject it at runtime, for example with `op run --env-file <template> -- graincrawl sync --source public-api`.
 
 ## JSON and automation
 

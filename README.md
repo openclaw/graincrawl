@@ -37,13 +37,21 @@ graincrawl notes
 graincrawl tui
 ```
 
-`sync` uses the configured source, which defaults to Granola's private desktop API session. When that session is unavailable and a readable plaintext desktop cache exists, an implicit sync falls back to the cache.
+`sync` uses the configured source, which defaults to Granola's private desktop API session. When that session is unavailable and a readable plaintext desktop cache exists, an implicit sync falls back to the cache. Granola's official public API is also supported when explicitly enabled:
+
+```bash
+GRANOLA_PUBLIC_API_KEY="..." \
+  GRAINCRAWL_ALLOW_PUBLIC_API=true \
+  graincrawl sync --source public-api
+```
+
+For managed environments, inject `GRANOLA_PUBLIC_API_KEY` at runtime from the operator's secret manager instead of writing it to the config file.
 
 ## Sources and archive contents
 
-The default private API source archives notes, transcripts, panels, people, workspaces, and retained source payloads. The desktop cache provides an offline fallback when `cache-v6.json` is readable. Both sources are read-only against Granola; graincrawl writes only to its own config, cache, and SQLite archive.
+The default private API source archives notes, transcripts, panels, people, workspaces, and retained source payloads. The desktop cache provides an offline fallback when `cache-v6.json` is readable. The official public API archives available notes, summaries, and transcripts, but does not expose panels or deletion events. All sources are read-only against Granola; graincrawl writes only to its own config, cache, and SQLite archive.
 
-Granola 7.427 and later can store its data-encryption key in an app-scoped Keychain item that graincrawl cannot access. `graincrawl doctor` detects this boundary. Existing archived data stays readable, and a source with usable plaintext state still works. See the [security model](docs/security.md) for the exact source and legacy encrypted-JSON behavior.
+Granola 7.427 and later can store its data-encryption key in an app-scoped Keychain item that graincrawl cannot access. `graincrawl doctor` detects this boundary. Existing archived data stays readable, and the official public API remains independent of the local Keychain boundary. See the [security model](docs/security.md) for the exact source and legacy encrypted-JSON behavior.
 
 ## Find and export notes
 

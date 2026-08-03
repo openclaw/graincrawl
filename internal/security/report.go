@@ -66,9 +66,9 @@ func Sources(cfg config.Config, paths granola.ProfilePaths) []SourceSupport {
 		{
 			Source:      model.SourcePublicAPI,
 			Allowed:     cfg.Granola.AllowPublicAPI,
-			Implemented: false,
+			Implemented: true,
 			NeedsSecret: true,
-			Notes:       "official API is currently limited compared with local archive goals",
+			Notes:       "official read-only API; key is read from GRANOLA_PUBLIC_API_KEY and never persisted",
 		},
 	}
 	if postMigration {
@@ -120,7 +120,7 @@ func Secrets(cfg config.Config) SecretReport {
 		PersistHelperKeys:  cfg.Security.PersistHelperKeys,
 		KeychainPromptMode: cfg.Security.KeychainPromptMode,
 		GranolaKeychain:    "external",
-		Message:            "graincrawl does not persist Granola tokens; encrypted sources require an explicit unlock flow",
+		Message:            "graincrawl does not persist Granola tokens or public API keys; encrypted sources require an explicit unlock flow",
 	}
 }
 

@@ -11,6 +11,7 @@ profile_path = "~/Library/Application Support/Granola"
 app_path = "/Applications/Granola.app"
 preferred_source = "private-api"
 allow_private_api = true
+# Requires GRANOLA_PUBLIC_API_KEY at process launch.
 allow_public_api = false
 allow_companion_cli = true
 allow_desktop_cache = true

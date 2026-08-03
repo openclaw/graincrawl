@@ -15,7 +15,7 @@ The product should feel like the other crawl apps:
 - strict handling of live app stores and secrets
 
 The important difference is that Granola has multiple overlapping access
-surfaces: a private API, a public Enterprise API, plaintext desktop cache,
+surfaces: a private API, an official public API, plaintext desktop cache,
 Electron safeStorage encrypted JSON, OPFS SQLCipher state, and a bundled
 companion CLI. `graincrawl` should treat those as source adapters with clear
 trust and support boundaries, not one mushy importer.
@@ -206,21 +206,22 @@ API stability:
 Optional official adapter.
 
 Use this only when the operator supplies an official Granola public API key.
-Current public docs indicate Enterprise access and a public notes endpoint.
+Business and Enterprise workspaces can create scoped personal API keys.
 
-Capabilities are expected to be narrower than private API. The adapter should
-not pretend it can provide transcripts or panels until proven.
+The adapter archives notes, summaries, calendar-event identity, and optional
+transcripts. The official API does not expose panels or deletion events, so
+graincrawl must not infer deletion from a note disappearing from a later page.
 
 Configuration:
 
 - `GRANOLA_PUBLIC_API_KEY`
-- `graincrawl config set public_api_key`
-- optional keychain storage through `graincrawl secrets set public-api-key`
+- `allow_public_api = true` or `GRAINCRAWL_ALLOW_PUBLIC_API=true`
+- never persist the API key in graincrawl config or SQLite
 
 Commands should make source limitations obvious:
 
 - `graincrawl sync --source public-api`
-- `graincrawl doctor public-api`
+- `graincrawl sources`
 
 ### `desktop-cache`
 
@@ -460,6 +461,7 @@ Environment variables:
 - `GRAINCRAWL_SOURCE`
 - `GRANOLA_PUBLIC_API_KEY`
 - `GRAINCRAWL_ALLOW_PRIVATE_API`
+- `GRAINCRAWL_ALLOW_PUBLIC_API`
 - `GRAINCRAWL_HELPER_TIMEOUT`
 - `GRAINCRAWL_NO_KEYCHAIN`
 

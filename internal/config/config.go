@@ -47,6 +47,7 @@ type APIConfig struct {
 	Platform            string `toml:"platform" json:"platform"`
 	IncludeSharedWithMe bool   `toml:"include_shared_with_me" json:"include_shared_with_me"`
 	RefreshMode         string `toml:"refresh_mode" json:"refresh_mode"`
+	PublicBaseURL       string `toml:"-" json:"-"`
 }
 
 type SyncConfig struct {
@@ -86,6 +87,7 @@ func Defaults() (Config, string, error) {
 			AppPath:           "/Applications/Granola.app",
 			PreferredSource:   envOr("GRAINCRAWL_SOURCE", "private-api"),
 			AllowPrivateAPI:   envBool("GRAINCRAWL_ALLOW_PRIVATE_API", true),
+			AllowPublicAPI:    envBool("GRAINCRAWL_ALLOW_PUBLIC_API", false),
 			AllowCompanionCLI: true,
 			AllowDesktopCache: true,
 		},
@@ -128,6 +130,9 @@ func Load(path string) (Config, string, error) {
 		}
 	} else if !os.IsNotExist(err) {
 		return Config{}, resolved, err
+	}
+	if _, ok := os.LookupEnv("GRAINCRAWL_ALLOW_PUBLIC_API"); ok {
+		cfg.Granola.AllowPublicAPI = envBool("GRAINCRAWL_ALLOW_PUBLIC_API", false)
 	}
 	return cfg, resolved, nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/openclaw/graincrawl/internal/config"
 	"github.com/openclaw/graincrawl/internal/granola"
+	"github.com/openclaw/graincrawl/internal/model"
 )
 
 func TestUnlockReportDoesNotRequireCompanion(t *testing.T) {
@@ -22,6 +23,24 @@ func TestUnlockReportDoesNotRequireCompanion(t *testing.T) {
 	if !report.PromptAllowed || !strings.Contains(report.Message, "explicit unlock") {
 		t.Fatalf("unexpected encrypted JSON unlock report: %#v", report)
 	}
+}
+
+func TestPublicAPISupportIsImplementedAndUnaffectedByLocalEncryption(t *testing.T) {
+	cfg := config.Config{Granola: config.GranolaConfig{AllowPublicAPI: true}}
+	profile := t.TempDir()
+	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json.enc"), []byte("encrypted"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, source := range Sources(cfg, granola.Paths(profile, "")) {
+		if source.Source != model.SourcePublicAPI {
+			continue
+		}
+		if !source.Allowed || !source.Implemented || !source.NeedsSecret || !strings.Contains(source.Notes, "GRANOLA_PUBLIC_API_KEY") {
+			t.Fatalf("public API support = %#v", source)
+		}
+		return
+	}
+	t.Fatal("public API source missing")
 }
 
 func TestUnlockReportExplainsUnsupportedOPFSWithoutCompanion(t *testing.T) {

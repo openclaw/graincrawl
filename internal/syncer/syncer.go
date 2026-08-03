@@ -29,6 +29,11 @@ func Run(ctx context.Context, cfg config.Config, st *store.Store, opts Options) 
 		if !cfg.Granola.AllowPrivateAPI {
 			return Result{}, fmt.Errorf("private-api source disabled in config")
 		}
+	case model.SourcePublicAPI:
+		if !cfg.Granola.AllowPublicAPI {
+			return Result{}, fmt.Errorf("public-api source disabled in config")
+		}
+		return PublicAPI(ctx, cfg, st, opts)
 	case model.SourceDesktopCache:
 		if !cfg.Granola.AllowDesktopCache {
 			return Result{}, fmt.Errorf("desktop-cache source disabled in config")

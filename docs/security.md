@@ -7,6 +7,7 @@ already present, plus plaintext cache fallback when Granola still writes one.
 ## Defaults
 
 - `allow_private_api = true`
+- `allow_public_api = false`
 - `allow_desktop_cache = true`
 - `allow_encrypted_json = false`
 - `allow_opfs = false`
@@ -16,6 +17,12 @@ already present, plus plaintext cache fallback when Granola still writes one.
 That means `graincrawl doctor`, `status`, `notes`, and `export` must not prompt
 macOS Keychain. A Keychain prompt is allowed only after the user explicitly
 enables encrypted sources and invokes an explicit unlock command.
+
+The official `public-api` source is independent of Granola's local profile and
+macOS Keychain state. It is disabled by default, requires an explicit
+`allow_public_api = true` or `GRAINCRAWL_ALLOW_PUBLIC_API=true`, and reads its
+credential only from `GRANOLA_PUBLIC_API_KEY`. graincrawl does not save that
+key to config, SQLite, logs, diagnostics, or source objects.
 
 ## Keychain Boundary
 
@@ -46,12 +53,16 @@ plaintext state is neither blocked nor advertised as unavailable.
 
 This is an upstream code-signing and Keychain access-group boundary, not a
 graincrawl bug. The legacy unlock path remains available only for profiles that
-still contain `storage.dek`; existing graincrawl archives remain readable.
+still contain `storage.dek`; existing graincrawl archives remain readable. The
+official public API remains a supportable read-only source across this boundary
+when the Granola account and API key scope expose the requested notes.
 
 ## Operational Rules
 
 - Do not log tokens, refresh tokens, decrypted keys, cookies, or raw encrypted
   payloads.
+- Inject `GRANOLA_PUBLIC_API_KEY` at process launch; do not store it in TOML,
+  shell profiles, command history, or fleet manifests.
 - Do not read or mutate live Granola files in tests.
 - Snapshot encrypted files into memory before Keychain access; never write
   decrypted Granola JSON to disk.

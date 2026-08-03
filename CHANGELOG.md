@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add an explicit official Granola public API source for scoped read-only note,
+  summary, and transcript archiving without depending on the desktop app's
+  local encryption key.
 - Rewrite the README around installation and first-use workflows, with the full command reference moved into `docs/commands.md`.
 
 ## v0.3.7 - 2026-08-02

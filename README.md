@@ -1,151 +1,99 @@
+# graincrawl 🌾 — Granola, gathered locally.
+
 <img src="docs/graincrawl_banner.jpg" alt="graincrawl banner"/>
 
-# 🌾 graincrawl
+[![CI](https://img.shields.io/github/actions/workflow/status/openclaw/graincrawl/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/openclaw/graincrawl/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/openclaw/graincrawl?style=flat-square)](https://github.com/openclaw/graincrawl/releases/latest)
+[![Go version](https://img.shields.io/github/go-mod/go-version/openclaw/graincrawl?style=flat-square)](https://go.dev/)
+[![License](https://img.shields.io/github/license/openclaw/graincrawl?style=flat-square)](LICENSE)
+[![Homebrew](https://img.shields.io/badge/homebrew-openclaw%2Ftap-FBB040?style=flat-square&logo=homebrew)](https://github.com/openclaw/homebrew-tap/blob/main/Formula/graincrawl.rb)
 
-`graincrawl` archives Granola notes, transcripts, panels, people, workspaces,
-and sync metadata into a private local SQLite store.
-
-It is local-first, read-only against Granola, and shaped like the other crawl
-apps: stable JSON output, Markdown export, crawlkit snapshots, and a terminal
-browser over the archived SQLite data.
-
-## Current Scope
-
-- sync notes from Granola's private desktop API session
-- import plaintext `cache-v6.json` as an offline fallback
-- retain transcripts, panels, people, workspaces, and raw source payloads
-- export notes to Markdown
-- browse archived notes with the shared crawlkit TUI
-- create/import portable crawlkit snapshots
-- explicitly unlock legacy encrypted JSON when `storage.dek` is still present;
-  keep OPFS unsupported
+`graincrawl` creates a private, local SQLite archive of Granola notes, transcripts, panels, people, workspaces, and sync metadata. It is for people who want searchable, exportable meeting data without writing to their Granola profile.
 
 ## Install
+
+With Homebrew:
 
 ```bash
 brew install openclaw/tap/graincrawl
 ```
 
-From source:
+From source (Go 1.26.5 or newer):
 
 ```bash
 go install github.com/openclaw/graincrawl/cmd/graincrawl@latest
 ```
 
-## Quick Start
+## Quick start
+
+Initialize the local config and archive, inspect the available Granola state, then sync:
 
 ```bash
 graincrawl init
 graincrawl doctor
-graincrawl sync --source private-api
+graincrawl sync
 graincrawl status
 graincrawl notes
 graincrawl tui
 ```
 
-Use JSON for automation:
+`sync` uses the configured source, which defaults to Granola's private desktop API session. When that session is unavailable and a readable plaintext desktop cache exists, an implicit sync falls back to the cache.
+
+## Sources and archive contents
+
+The default private API source archives notes, transcripts, panels, people, workspaces, and retained source payloads. The desktop cache provides an offline fallback when `cache-v6.json` is readable. Both sources are read-only against Granola; graincrawl writes only to its own config, cache, and SQLite archive.
+
+Granola 7.427 and later can store its data-encryption key in an app-scoped Keychain item that graincrawl cannot access. `graincrawl doctor` detects this boundary. Existing archived data stays readable, and a source with usable plaintext state still works. See the [security model](docs/security.md) for the exact source and legacy encrypted-JSON behavior.
+
+## Find and export notes
+
+Search the archive, inspect one note, or export Markdown:
 
 ```bash
-graincrawl doctor --json
-graincrawl status --json
-graincrawl notes --json
-graincrawl tui --json
-```
-
-## Commands
-
-```bash
-graincrawl version
-graincrawl init
-graincrawl doctor
-graincrawl check-update
-graincrawl metadata
-graincrawl status
-graincrawl sync --source private-api
-graincrawl sync --source private-api --unlock encrypted-json
-graincrawl sync --source desktop-cache
-graincrawl sync --source desktop-cache --unlock encrypted-json
-graincrawl runs
-graincrawl notes
 graincrawl search "decision"
-graincrawl --json sql "select count(*) as notes from notes;"
 graincrawl note get <id>
 graincrawl transcripts get <id>
-graincrawl panels get <id>
-graincrawl people
-graincrawl workspaces
-graincrawl sources
-graincrawl unlock
-graincrawl unlock encrypted-json
-graincrawl secrets
 graincrawl export markdown --out ./granola-notes
-graincrawl snapshot create --out ./graincrawl-snapshot
-graincrawl import ./graincrawl-snapshot
-graincrawl import --replace ./graincrawl-snapshot
-graincrawl tui
-graincrawl completion zsh
 ```
 
-## Shared crawlkit surfaces
+For automation, put `--json` before the command. The SQL surface is read-only:
 
-`graincrawl metadata` exposes crawlkit control metadata for scripts and status
-dashboards.
+```bash
+graincrawl --json status
+graincrawl --json notes
+graincrawl --json sql "select count(*) as notes from notes"
+```
 
-`graincrawl snapshot create` and `graincrawl import` use `crawlkit/snapshot` so
-archives can move between machines without touching the live Granola profile.
-Imports merge into the local archive by default. Use `graincrawl import
---replace <snapshot-dir>` only for an explicit exact restore that removes rows
-not present in the snapshot. Merge mode keeps existing local payloads on
-identity conflicts while preserving any tombstone found on either side.
+## Portable snapshots
 
-`graincrawl tui` uses `crawlkit/tui` over archived notes. The detail pane is
-fed from SQLite, including note text, transcript chunks, panels, and retained
-source metadata.
+Snapshots move the archive between machines without touching the live Granola profile:
 
-## Distribution
+```bash
+graincrawl snapshot create --out ./graincrawl-snapshot
+graincrawl import ./graincrawl-snapshot
+```
 
-Releases use GoReleaser for GitHub release assets and Linux packages, plus a
-source-built Homebrew formula in `openclaw/tap`.
+Imports merge by default and keep existing local payloads on identity conflicts. `graincrawl import --replace ./graincrawl-snapshot` performs an exact restore and removes rows that are absent from the snapshot.
 
-Official macOS archives are signed with the OpenClaw Foundation Developer ID,
-notarized by Apple, and independently verified before publication. Source
-builds and snapshot releases remain unsigned and do not require release
-credentials.
+See the [command reference](docs/commands.md) for every command, flags, JSON output, and shell completion.
 
-`graincrawl` checks for new GitHub releases at most once every 24 hours during
-interactive CLI use and prints a short upgrade hint when a newer version is
-available. The check is skipped for JSON output, CI, non-terminal stderr, and
-development builds. Run `graincrawl check-update` to check explicitly, or
-disable passive checks with `CRAWLKIT_NO_UPDATE_CHECK=1` or
-`GRAINCRAWL_NO_UPDATE_CHECK=1`.
+## Configuration
 
-See [docs/distribution.md](docs/distribution.md).
+`graincrawl init` writes a private config file and creates the archive directories. Use `--config <path>` or `GRAINCRAWL_CONFIG` to select another config, and start from [`config.example.toml`](config.example.toml) when you need custom source, path, sync, or security settings.
 
-## Safety Model
+Passive update checks run at most once every 24 hours during interactive use. They are skipped for JSON output, CI, non-terminal stderr, and development builds. Set `GRAINCRAWL_NO_UPDATE_CHECK=1` or `CRAWLKIT_NO_UPDATE_CHECK=1` to disable them.
 
-`graincrawl` never writes to Granola app data. It reads from Granola's private
-read endpoints or local files and stores its own archive under the configured
-graincrawl paths.
+Release packaging and verification are documented in [docs/distribution.md](docs/distribution.md).
 
-Encrypted JSON and macOS Keychain access require `allow_encrypted_json = true`
-plus an explicit `unlock encrypted-json` command or `--unlock encrypted-json`
-sync flag. Decrypted payloads stay in process memory and are not written back
-to Granola. OPFS remains unsupported. Ordinary `doctor`, `status`, `notes`,
-`export`, and `tui` commands never prompt Keychain.
+## Development
 
-See [docs/security.md](docs/security.md).
+```bash
+make build
+make check
+```
 
-### Granola 7.427+ encrypted state
+Contributions must preserve graincrawl's read-only boundary. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Granola 7.427+ moved its data-encryption key into the macOS data-protection
-Keychain under the app-scoped access group `QZ7DHHLN25.granola`. Only code
-signed by Granola's team can read that item, so graincrawl cannot decrypt the
-local Granola state after this migration. In this state `unlock encrypted-json`
-is always blocked, and `private-api` or `desktop-cache` is blocked only when the
-state that source itself needs is encrypted — a source whose plaintext file is
-still readable keeps working. Existing data already archived by graincrawl
-remains readable.
+## License
 
-`graincrawl doctor` detects the migration from the profile state: `storage.dek`
-is absent while at least one `*.enc` file is present. This is an upstream
-Keychain access boundary, not a graincrawl bug.
+MIT. See [LICENSE](LICENSE).

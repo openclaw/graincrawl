@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.4.0 - 2026-08-03
+
 - Add an explicit official Granola public API source for scoped read-only note,
   summary, and transcript archiving without depending on the desktop app's
   local encryption key.

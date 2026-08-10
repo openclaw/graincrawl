@@ -3,9 +3,9 @@ module github.com/openclaw/graincrawl
 go 1.26.5
 
 require (
-	github.com/openclaw/crawlkit v0.14.5
+	github.com/openclaw/crawlkit v0.14.6
 	github.com/pelletier/go-toml/v2 v2.4.3
-	modernc.org/sqlite v1.55.0
+	modernc.org/sqlite v1.56.0
 )
 
 require (
@@ -21,7 +21,6 @@ require (
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
-	github.com/google/pprof v0.0.0-20260802004507-5106ece31595 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
@@ -37,10 +36,7 @@ require (
 	golang.org/x/exp v0.0.0-20260727155853-b88d891fe743 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
-	golang.org/x/tools v0.48.0 // indirect
-	modernc.org/cc/v4 v4.29.2 // indirect
-	modernc.org/gc/v3 v3.1.5 // indirect
-	modernc.org/libc v1.74.4 // indirect
+	modernc.org/libc v1.75.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.11.0 // indirect
+	modernc.org/memory v1.12.0 // indirect
 )

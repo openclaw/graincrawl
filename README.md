@@ -18,7 +18,7 @@ With Homebrew:
 brew install openclaw/tap/graincrawl
 ```
 
-From source (Go 1.26.5 or newer):
+From source (Go 1.26.6 or newer):
 
 ```bash
 go install github.com/openclaw/graincrawl/cmd/graincrawl@latest

@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## v0.4.1 - 2026-08-14
 
+- Update the minimum Go toolchain to 1.26.6 to resolve GO-2026-5026, GO-2026-5972, GO-2026-6090, and GO-2026-6218.
 ## v0.4.0 - 2026-08-03
 
 - Add an explicit official Granola public API source for scoped read-only note,

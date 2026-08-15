@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
 )
 
-const BaseURL = "https://api.granola.ai"
+const (
+	BaseURL          = "https://api.granola.ai"
+	maxResponseBytes = 64 << 20
+)
 
 type Client struct {
 	HTTP          *http.Client
@@ -58,9 +62,12 @@ func (c Client) Do(ctx context.Context, endpoint string, input any, output any) 
 		return err
 	}
 	defer resp.Body.Close()
-	b, err := io.ReadAll(resp.Body)
+	b, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
 	if err != nil {
 		return err
+	}
+	if len(b) > maxResponseBytes {
+		return errors.New("granola private API response exceeds size limit")
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return APIError{StatusCode: resp.StatusCode, Body: string(b)}

@@ -1,10 +1,13 @@
 package privateapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -25,6 +28,33 @@ func TestClientSendsGranolaHeaders(t *testing.T) {
 	}
 	if gotAuth != "Bearer token" || gotWorkspace != "workspace" {
 		t.Fatalf("headers auth=%q workspace=%q", gotAuth, gotWorkspace)
+	}
+}
+
+func TestClientRejectsOversizedResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"docs":[],"deleted":[],"pad":"`)
+		chunk := bytes.Repeat([]byte("a"), 1024*1024)
+		written := 0
+		for written <= maxResponseBytes {
+			n, err := w.Write(chunk)
+			if err != nil {
+				return
+			}
+			written += n
+		}
+		_, _ = io.WriteString(w, `"}`)
+	}))
+	defer srv.Close()
+
+	client := Client{BaseURL: srv.URL, AccessToken: "token"}
+	_, err := client.GetDocuments(context.Background(), DocumentsRequest{})
+	if err == nil {
+		t.Fatal("expected oversized private API response to be rejected")
+	}
+	if !strings.Contains(err.Error(), "size limit") {
+		t.Fatalf("expected size limit error, got %v", err)
 	}
 }
 

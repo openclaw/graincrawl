@@ -3,7 +3,7 @@
 VERSION ?= 0.0.0-dev
 TAG ?=
 ARCHIVES ?=
-GORELEASER := GOWORK=off go run github.com/goreleaser/goreleaser/v2@v2.17.1
+GORELEASER := GOWORK=off go run github.com/goreleaser/goreleaser/v2@v2.18.0
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS := -s -w \
@@ -39,11 +39,11 @@ deps: ## Verify module metadata and known vulnerabilities.
 	GOWORK=off go mod verify
 	$(MAKE) tidy
 	git diff --exit-code -- go.mod go.sum
-	GOWORK=off go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./...
+	GOWORK=off go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
 
 lint: vet ## Run static analysis enforced by CI.
 	@output_file="$$(mktemp)"; trap 'rm -f "$$output_file"' EXIT; \
-	if ! GOWORK=off go run golang.org/x/tools/cmd/deadcode@v0.48.0 -test ./... > "$$output_file"; then \
+	if ! GOWORK=off go run golang.org/x/tools/cmd/deadcode@v0.49.0 -test ./... > "$$output_file"; then \
 		cat "$$output_file"; exit 1; \
 	fi; \
 	if [ -s "$$output_file" ]; then cat "$$output_file"; exit 1; fi

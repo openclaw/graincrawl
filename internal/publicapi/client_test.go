@@ -74,6 +74,21 @@ func TestClientRetriesRateLimitWithoutExposingBody(t *testing.T) {
 	}
 }
 
+func TestRetryDelayCapsDeltaSecondsAndHTTPDate(t *testing.T) {
+	if got := retryDelay("86400", 0); got != 60*time.Second {
+		t.Fatalf("retryDelay(86400) = %s, want 60s", got)
+	}
+
+	when := time.Now().Add(24 * time.Hour).UTC().Format(http.TimeFormat)
+	if got := retryDelay(when, 0); got != 60*time.Second {
+		t.Fatalf("retryDelay(%q) = %s, want 60s", when, got)
+	}
+
+	if got := retryDelay("5", 0); got != 5*time.Second {
+		t.Fatalf("retryDelay(5) = %s, want 5s", got)
+	}
+}
+
 func TestNormalizersPreserveSummaryAndStableTranscriptIdentity(t *testing.T) {
 	title := "Planning"
 	markdown := "summary"

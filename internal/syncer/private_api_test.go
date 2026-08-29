@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -193,6 +194,68 @@ func TestSyncPrivateRetainsUnknownExplicitDeleteAsStubTombstone(t *testing.T) {
 	assertDeletion(t, "stub note", note.DeletedAt, note.DeletionSource, note.DeletionReason)
 }
 
+func TestSyncPrivateReturnsTranscriptFetchError(t *testing.T) {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(t, w, `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
+	})
+	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(t, w, `{"docs":[]}`)
+	})
+	mux.HandleFunc("/v1/get-document-transcript", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "upstream timeout", http.StatusInternalServerError)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
+	_, err = syncPrivateWithMessage(ctx, client, st, Options{IncludeTranscripts: true}, false, "")
+	if err == nil {
+		t.Fatal("expected transcript fetch error")
+	}
+	if !strings.Contains(err.Error(), "granola api returned 500") {
+		t.Fatalf("error = %v", err)
+	}
+	assertNoOKSyncRun(t, ctx, st)
+}
+
+func TestSyncPrivateReturnsPanelFetchError(t *testing.T) {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(t, w, `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
+	})
+	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(t, w, `{"docs":[]}`)
+	})
+	mux.HandleFunc("/v1/get-document-panels", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "upstream timeout", http.StatusInternalServerError)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
+	_, err = syncPrivateWithMessage(ctx, client, st, Options{IncludePanels: true}, false, "")
+	if err == nil {
+		t.Fatal("expected panel fetch error")
+	}
+	if !strings.Contains(err.Error(), "granola api returned 500") {
+		t.Fatalf("error = %v", err)
+	}
+	assertNoOKSyncRun(t, ctx, st)
+}
+
 func TestSyncPrivateRetainsPanelDeletedAtOnPanelAndSourceObject(t *testing.T) {
 	ctx := context.Background()
 	mux := http.NewServeMux()
@@ -230,6 +293,19 @@ func TestSyncPrivateRetainsPanelDeletedAtOnPanelAndSourceObject(t *testing.T) {
 	}
 	if objects[0].DeletedAt == nil || objects[0].DeletionReason != store.DeletionReasonSourceField {
 		t.Fatalf("panel source deletion = %#v", objects[0])
+	}
+}
+
+func assertNoOKSyncRun(t *testing.T, ctx context.Context, st *store.Store) {
+	t.Helper()
+	runs, err := st.ListSyncRuns(ctx, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, run := range runs {
+		if run.Status == "ok" {
+			t.Fatalf("sync run recorded as ok after fetch error: %#v", run)
+		}
 	}
 }
 

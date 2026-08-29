@@ -103,47 +103,49 @@ func syncPrivateWithMessage(ctx context.Context, client privateapi.Client, st *s
 		result.Notes++
 		if opts.IncludeTranscripts {
 			chunks, err := client.GetDocumentTranscript(ctx, doc.ID)
-			if err == nil {
-				for _, chunk := range chunks {
-					if err := retainSourceObject(ctx, st, source, "transcript_chunk", chunk.ID, doc.ID, chunk, now); err != nil {
-						return result, err
-					}
-					modelChunk, err := privateapi.TranscriptToModel(chunk)
-					if err != nil {
-						return result, err
-					}
-					if err := st.UpsertTranscriptChunk(ctx, modelChunk); err != nil {
-						return result, err
-					}
-					result.Transcripts++
+			if err != nil {
+				return result, err
+			}
+			for _, chunk := range chunks {
+				if err := retainSourceObject(ctx, st, source, "transcript_chunk", chunk.ID, doc.ID, chunk, now); err != nil {
+					return result, err
 				}
+				modelChunk, err := privateapi.TranscriptToModel(chunk)
+				if err != nil {
+					return result, err
+				}
+				if err := st.UpsertTranscriptChunk(ctx, modelChunk); err != nil {
+					return result, err
+				}
+				result.Transcripts++
 			}
 		}
 		if opts.IncludePanels {
 			panels, err := client.GetDocumentPanels(ctx, doc.ID)
-			if err == nil {
-				for _, panel := range panels {
-					if err := retainSourceObject(ctx, st, source, "panel", panel.ID, doc.ID, panel, now); err != nil {
-						return result, err
-					}
-					modelPanel, err := privateapi.PanelToModel(panel)
-					if err != nil {
-						return result, err
-					}
-					if err := st.UpsertPanel(ctx, modelPanel); err != nil {
-						return result, err
-					}
-					if modelPanel.DeletedAt != nil {
-						if err := st.TombstoneSourceObject(ctx, source, "panel", panel.ID, store.Deletion{
-							At:     *modelPanel.DeletedAt,
-							Source: source,
-							Reason: store.DeletionReasonSourceField,
-						}); err != nil {
-							return result, err
-						}
-					}
-					result.Panels++
+			if err != nil {
+				return result, err
+			}
+			for _, panel := range panels {
+				if err := retainSourceObject(ctx, st, source, "panel", panel.ID, doc.ID, panel, now); err != nil {
+					return result, err
 				}
+				modelPanel, err := privateapi.PanelToModel(panel)
+				if err != nil {
+					return result, err
+				}
+				if err := st.UpsertPanel(ctx, modelPanel); err != nil {
+					return result, err
+				}
+				if modelPanel.DeletedAt != nil {
+					if err := st.TombstoneSourceObject(ctx, source, "panel", panel.ID, store.Deletion{
+						At:     *modelPanel.DeletedAt,
+						Source: source,
+						Reason: store.DeletionReasonSourceField,
+					}); err != nil {
+						return result, err
+					}
+				}
+				result.Panels++
 			}
 		}
 		if note.DeletedAt != nil {

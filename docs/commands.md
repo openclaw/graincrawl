@@ -78,6 +78,8 @@ Legacy encrypted JSON requires `allow_encrypted_json = true` and an explicit unl
 
 The public API key is never written to graincrawl config or SQLite. Inject it at runtime, for example with `op run --env-file <template> -- graincrawl sync --source public-api`.
 
+Release-check HTTP requests time out after 30 seconds if the server does not respond.
+
 ## JSON and automation
 
 Every command that returns data accepts the global `--json` option. For example:

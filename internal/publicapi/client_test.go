@@ -2,9 +2,11 @@ package publicapi
 
 import (
 	"context"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -71,6 +73,39 @@ func TestClientRetriesRateLimitWithoutExposingBody(t *testing.T) {
 	}
 	if requests != 2 {
 		t.Fatalf("requests = %d", requests)
+	}
+}
+
+func TestRetryDelayCapsDeltaSecondsAndHTTPDate(t *testing.T) {
+	for _, tt := range []struct {
+		value string
+		want  time.Duration
+	}{
+		{"0", 0},
+		{"5", 5 * time.Second},
+		{"60", 60 * time.Second},
+		{"61", 60 * time.Second},
+		{"86400", 60 * time.Second},
+		{strconv.Itoa(math.MaxInt), 60 * time.Second},
+		{"-1", 4 * time.Second},
+		{"invalid", 4 * time.Second},
+		{"", 4 * time.Second},
+	} {
+		t.Run(tt.value, func(t *testing.T) {
+			if got := retryDelay(tt.value, 2); got != tt.want {
+				t.Fatalf("retryDelay(%q) = %s, want %s", tt.value, got, tt.want)
+			}
+		})
+	}
+
+	when := time.Now().Add(24 * time.Hour).UTC().Format(http.TimeFormat)
+	if got := retryDelay(when, 0); got != 60*time.Second {
+		t.Fatalf("retryDelay(%q) = %s, want 60s", when, got)
+	}
+
+	past := time.Now().Add(-time.Hour).UTC().Format(http.TimeFormat)
+	if got := retryDelay(past, 0); got != 0 {
+		t.Fatalf("retryDelay(%q) = %s, want 0s", past, got)
 	}
 }
 

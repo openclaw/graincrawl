@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Cap public API rate-limit waits at 60 seconds, including oversized numeric and HTTP-date `Retry-After` headers, without overflowing the delay. Thanks @SebTardif.
 - Update Go to 1.27.0, refresh SQLite and terminal/runtime dependencies, and update GoReleaser, vulnerability/dead-code tooling, and TruffleHog.
 
 ## v0.4.1 - 2026-08-14

@@ -20,6 +20,9 @@ const (
 	pageLimit        = 30
 	maxResponseBytes = 64 << 20
 	maxAttempts      = 4
+	// maxRetryAfter caps Retry-After waits. Granola may send delta-seconds
+	// or an HTTP-date far in the future; CLI sync often has no deadline.
+	maxRetryAfter = 60 * time.Second
 )
 
 type Client struct {
@@ -147,15 +150,27 @@ func (e APIError) Error() string {
 
 func retryDelay(value string, attempt int) time.Duration {
 	if seconds, err := strconv.Atoi(value); err == nil && seconds >= 0 {
+		// Clamp seconds first so the duration conversion cannot overflow.
+		if seconds > int(maxRetryAfter/time.Second) {
+			return maxRetryAfter
+		}
 		return time.Duration(seconds) * time.Second
 	}
 	if when, err := http.ParseTime(value); err == nil {
 		if delay := time.Until(when); delay > 0 {
-			return delay
+			return capRetryAfter(delay)
 		}
 		return 0
 	}
 	return time.Second << attempt
+}
+
+func capRetryAfter(wait time.Duration) time.Duration {
+	if wait > maxRetryAfter {
+		return maxRetryAfter
+	}
+
+	return wait
 }
 
 func waitForRetry(ctx context.Context, delay time.Duration) error {

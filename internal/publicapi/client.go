@@ -150,7 +150,11 @@ func (e APIError) Error() string {
 
 func retryDelay(value string, attempt int) time.Duration {
 	if seconds, err := strconv.Atoi(value); err == nil && seconds >= 0 {
-		return capRetryAfter(time.Duration(seconds) * time.Second)
+		// Clamp seconds first so the duration conversion cannot overflow.
+		if seconds > int(maxRetryAfter/time.Second) {
+			return maxRetryAfter
+		}
+		return time.Duration(seconds) * time.Second
 	}
 	if when, err := http.ParseTime(value); err == nil {
 		if delay := time.Until(when); delay > 0 {

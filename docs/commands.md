@@ -33,6 +33,8 @@ graincrawl [--json] [--config <path>] [--version] <command> [args]
 
 `private-api`, `public-api`, and `desktop-cache` are supported sync sources. `public-api` must be explicitly enabled with `allow_public_api = true` or `GRAINCRAWL_ALLOW_PUBLIC_API=true`; its key is read only from `GRANOLA_PUBLIC_API_KEY`. It archives notes, summaries, and transcripts available to the key, but the official API does not expose panels or deletion events.
 
+Public API rate-limit responses are retried up to three times. Each `Retry-After` wait is capped at 60 seconds, so a distant retry date or oversized delay cannot stall sync for hours.
+
 ## Read the archive
 
 | Command | Purpose |

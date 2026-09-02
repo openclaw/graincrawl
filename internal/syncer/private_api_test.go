@@ -53,6 +53,29 @@ func TestSyncPrivateHydratesDocumentBodyBeforeUpsert(t *testing.T) {
 	}
 }
 
+func TestSyncPrivateFailsWhenBatchHydrateErrors(t *testing.T) {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(t, w, `{"docs":[{"id":"doc-1","title":"Planning","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
+	})
+	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"error":"hydrate failed"}`, http.StatusInternalServerError)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
+	if _, err := syncPrivateWithMessage(ctx, client, st, Options{Source: model.SourcePrivateAPI, Limit: 1}, false, ""); err == nil {
+		t.Fatal("expected sync to fail when document batch hydrate returns 500")
+	}
+}
+
 func TestSyncPrivateConsumesExplicitDeleteFeedAndTombstonesChildren(t *testing.T) {
 	ctx := context.Background()
 	deleted := false

@@ -81,7 +81,11 @@ func syncPrivateWithMessage(ctx context.Context, client privateapi.Client, st *s
 	if opts.Limit > 0 && len(all) > opts.Limit {
 		all = all[:opts.Limit]
 	}
-	if hydrated, err := client.GetDocumentsBatch(ctx, documentIDs(all)); err == nil && len(hydrated.Docs) > 0 {
+	hydrated, err := client.GetDocumentsBatch(ctx, documentIDs(all))
+	if err != nil {
+		return result, err
+	}
+	if len(hydrated.Docs) > 0 {
 		all = mergeHydratedDocuments(all, hydrated.Docs)
 	}
 	now := time.Now().UTC()

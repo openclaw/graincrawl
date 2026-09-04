@@ -2,11 +2,13 @@ package syncer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -293,6 +295,84 @@ func TestSyncPrivateRetainsPanelDeletedAtOnPanelAndSourceObject(t *testing.T) {
 	}
 	if objects[0].DeletedAt == nil || objects[0].DeletionReason != store.DeletionReasonSourceField {
 		t.Fatalf("panel source deletion = %#v", objects[0])
+	}
+}
+
+func TestSyncPrivateHydrationFailureRetainsWritesAndCanRetry(t *testing.T) {
+	for _, endpoint := range []string{"/v1/get-document-transcript", "/v1/get-document-panels"} {
+		t.Run(endpoint, func(t *testing.T) {
+			ctx := context.Background()
+			var failing atomic.Bool
+			failing.Store(true)
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if failing.Load() && r.URL.Path == endpoint {
+					http.Error(w, "upstream unavailable", http.StatusInternalServerError)
+					return
+				}
+				var req struct {
+					DocumentID string `json:"document_id"`
+				}
+				if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+					t.Errorf("decode request: %v", err)
+					http.Error(w, "invalid request", http.StatusBadRequest)
+					return
+				}
+				switch r.URL.Path {
+				case "/v2/get-documents":
+					writeJSON(t, w, `{"docs":[{"id":"doc-1","type":"meeting"},{"id":"doc-2","type":"meeting"}],"deleted":["deleted-doc"],"shared":[]}`)
+				case "/v1/get-documents-batch":
+					writeJSON(t, w, `{"docs":[]}`)
+				case "/v1/get-document-transcript":
+					writeJSON(t, w, fmt.Sprintf(`[{"id":"chunk-%s","document_id":"%s","text":"retained transcript","is_final":true}]`, req.DocumentID, req.DocumentID))
+				case "/v1/get-document-panels":
+					writeJSON(t, w, fmt.Sprintf(`[{"id":"panel-%s","document_id":"%s","title":"Summary","content":{"text":"retained panel"}}]`, req.DocumentID, req.DocumentID))
+				default:
+					http.NotFound(w, r)
+				}
+			}))
+			defer srv.Close()
+			st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer st.Close()
+			client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
+			opts := Options{IncludeTranscripts: true, IncludePanels: true}
+			result, err := syncPrivateWithMessage(ctx, client, st, opts, false, "")
+			if err == nil || !strings.Contains(err.Error(), "granola api returned 500") || result.Notes != 1 {
+				t.Fatalf("failed sync = %#v, error = %v", result, err)
+			}
+			assertNoOKSyncRun(t, ctx, st)
+			for _, id := range []string{"doc-1", "doc-2", "deleted-doc"} {
+				_, ok, err := st.GetNote(ctx, id)
+				if err != nil || ok != (id == "doc-1") {
+					t.Fatalf("note %s after failure: exists=%v err=%v", id, ok, err)
+				}
+			}
+			failing.Store(false)
+			result, err = syncPrivateWithMessage(ctx, client, st, opts, false, "")
+			if err != nil || result.Notes != 2 || result.Transcripts != 2 || result.Panels != 2 || result.Deleted != 1 {
+				t.Fatalf("retry = %#v, error = %v", result, err)
+			}
+			for _, id := range []string{"doc-1", "doc-2"} {
+				chunks, err := st.ListTranscript(ctx, id)
+				if err != nil || len(chunks) != 1 {
+					t.Fatalf("%s transcripts after retry = %#v, err=%v", id, chunks, err)
+				}
+				panels, err := st.ListPanels(ctx, id)
+				if err != nil || len(panels) != 1 {
+					t.Fatalf("%s panels after retry = %#v, err=%v", id, panels, err)
+				}
+			}
+			deleted, ok, err := st.GetNote(ctx, "deleted-doc")
+			if err != nil || !ok || deleted.DeletedAt == nil {
+				t.Fatalf("deletion after retry: %#v exists=%v err=%v", deleted, ok, err)
+			}
+			runs, err := st.ListSyncRuns(ctx, 10)
+			if err != nil || len(runs) != 1 || runs[0].Status != "ok" {
+				t.Fatalf("sync runs after retry = %#v, err=%v", runs, err)
+			}
+		})
 	}
 }
 

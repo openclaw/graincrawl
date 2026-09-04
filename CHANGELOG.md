@@ -4,6 +4,7 @@
 
 **Highlights:** Private API sync now fails instead of reporting success when Granola data cannot be fetched, alongside safer snapshot imports and bounded API responses and retry waits.
 
+- Preserve archived note bodies and fail sync when private API document batch hydration fails, instead of reporting a successful list-only archive. Thanks @SebTardif.
 - Report private API transcript and panel fetch failures instead of recording incomplete syncs as successful; retain earlier writes for a later retry. Thanks @SebTardif.
 - Reject absolute and parent-traversing snapshot shard paths through CrawlKit v0.14.9. Thanks @SebTardif.
 - Cap private API response bodies at 64 MiB to prevent oversized responses from exhausting memory. Thanks @SebTardif.

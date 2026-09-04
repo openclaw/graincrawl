@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Update Go to 1.27.1, SQLite to 3.53.4 through modernc.org/sqlite v1.58.0, terminal width handling, and TruffleHog secret scanning.
 - Bound release-check HTTP requests to 30 seconds through CrawlKit v0.14.8 so an unresponsive server cannot hang update checks indefinitely.
 - Cap public API rate-limit waits at 60 seconds, including oversized numeric and HTTP-date `Retry-After` headers, without overflowing the delay. Thanks @SebTardif.
 - Update Go to 1.27.0, refresh SQLite and terminal/runtime dependencies, and update GoReleaser, vulnerability/dead-code tooling, and TruffleHog.

@@ -62,6 +62,8 @@ The TUI detail pane is assembled from the SQLite archive, including note text, t
 
 Merge imports keep existing local payloads on identity conflicts and preserve tombstones found on either side.
 
+Snapshot shard paths must be relative to the snapshot directory. Imports reject absolute paths and paths that traverse outside that directory.
+
 ## Security and diagnostics
 
 | Command | Purpose |

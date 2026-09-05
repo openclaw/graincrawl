@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-**Highlights:** Safer snapshot imports and bounded API responses and retry waits.
+**Highlights:** Private API sync now fails instead of reporting success when Granola data cannot be fetched, alongside safer snapshot imports and bounded API responses and retry waits.
 
+- Report private API transcript and panel fetch failures instead of recording incomplete syncs as successful; retain earlier writes for a later retry. Thanks @SebTardif.
 - Reject absolute and parent-traversing snapshot shard paths through CrawlKit v0.14.9. Thanks @SebTardif.
 - Cap private API response bodies at 64 MiB to prevent oversized responses from exhausting memory. Thanks @SebTardif.
 - Cap public API rate-limit waits at 60 seconds, including oversized numeric and HTTP-date `Retry-After` headers, without overflowing the delay. Thanks @SebTardif.

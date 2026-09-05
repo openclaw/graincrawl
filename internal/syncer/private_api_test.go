@@ -114,6 +114,38 @@ func TestSyncPrivateFailsWhenBatchHydrateErrors(t *testing.T) {
 	}
 }
 
+func TestSyncPrivateBatchFailurePreservesArchivedBody(t *testing.T) {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(t, w, `{"docs":[{"id":"doc-1","title":"Thin list document","type":"meeting"}],"deleted":[],"shared":[]}`)
+	})
+	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "upstream unavailable", http.StatusInternalServerError)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	title, body := "Archived document", "Previously hydrated note body"
+	if err := st.UpsertNote(ctx, model.Note{ID: "doc-1", Type: "meeting", Title: &title, NotesMarkdown: &body}); err != nil {
+		t.Fatal(err)
+	}
+	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
+	result, syncErr := syncPrivateWithMessage(ctx, client, st, Options{}, false, "")
+	note, ok, err := st.GetNote(ctx, "doc-1")
+	if err != nil || !ok || note.NotesMarkdown == nil || *note.NotesMarkdown != body || note.Title == nil || *note.Title != title {
+		t.Fatalf("batch failure replaced archived note: %#v, exists=%v, err=%v", note, ok, err)
+	}
+	if syncErr == nil || !strings.Contains(syncErr.Error(), "granola api returned 500") || result.Notes != 0 {
+		t.Fatalf("failed sync = %#v, error = %v", result, syncErr)
+	}
+	assertNoOKSyncRun(t, ctx, st)
+}
+
 func TestSyncPrivateConsumesExplicitDeleteFeedAndTombstonesChildren(t *testing.T) {
 	ctx := context.Background()
 	deleted := false

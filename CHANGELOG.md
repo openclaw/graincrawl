@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 0.4.2 - 2026-09-05
 
 **Highlights:** Private API sync now fails instead of reporting success when Granola data cannot be fetched, alongside safer snapshot imports and bounded API responses and retry waits.

@@ -53,6 +53,99 @@ func TestSyncPrivateHydratesDocumentBodyBeforeUpsert(t *testing.T) {
 	}
 }
 
+func TestSyncPrivateFailsWhenBatchHydrateErrors(t *testing.T) {
+	ctx := context.Background()
+	var failing atomic.Bool
+	failing.Store(true)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(t, w, `{"docs":[{"id":"doc-1","title":"Planning","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":["deleted-doc"],"shared":[]}`)
+	})
+	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
+		if failing.Load() {
+			http.Error(w, `{"error":"hydrate failed"}`, http.StatusInternalServerError)
+			return
+		}
+		writeJSON(t, w, `{"docs":[]}`)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
+	opts := Options{Source: model.SourcePrivateAPI, Limit: 1}
+	result, err := syncPrivateWithMessage(ctx, client, st, opts, false, "")
+	if err == nil || !strings.Contains(err.Error(), "granola api returned 500") || result.Notes != 0 {
+		t.Fatalf("failed sync = %#v, error = %v", result, err)
+	}
+	for _, id := range []string{"doc-1", "deleted-doc"} {
+		if _, ok, err := st.GetNote(ctx, id); err != nil || ok {
+			t.Fatalf("note %s after batch failure: exists=%v err=%v", id, ok, err)
+		}
+	}
+	objects, err := st.ListSourceObjects(ctx, "", 10)
+	if err != nil || len(objects) != 0 {
+		t.Fatalf("source objects after batch failure = %#v, err=%v", objects, err)
+	}
+	runs, err := st.ListSyncRuns(ctx, 10)
+	if err != nil || len(runs) != 0 {
+		t.Fatalf("sync runs after batch failure = %#v, err=%v", runs, err)
+	}
+	failing.Store(false)
+	result, err = syncPrivateWithMessage(ctx, client, st, opts, false, "")
+	if err != nil || result.Notes != 1 || result.Deleted != 1 {
+		t.Fatalf("retry = %#v, error = %v", result, err)
+	}
+	note, ok, err := st.GetNote(ctx, "doc-1")
+	if err != nil || !ok || note.Title == nil || *note.Title != "Planning" {
+		t.Fatalf("listed document after empty batch retry: %#v exists=%v err=%v", note, ok, err)
+	}
+	deleted, ok, err := st.GetNote(ctx, "deleted-doc")
+	if err != nil || !ok || deleted.DeletedAt == nil {
+		t.Fatalf("deletion after retry: %#v exists=%v err=%v", deleted, ok, err)
+	}
+	runs, err = st.ListSyncRuns(ctx, 10)
+	if err != nil || len(runs) != 1 || runs[0].Status != "ok" {
+		t.Fatalf("sync runs after retry = %#v, err=%v", runs, err)
+	}
+}
+
+func TestSyncPrivateBatchFailurePreservesArchivedBody(t *testing.T) {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(t, w, `{"docs":[{"id":"doc-1","title":"Thin list document","type":"meeting"}],"deleted":[],"shared":[]}`)
+	})
+	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "upstream unavailable", http.StatusInternalServerError)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	title, body := "Archived document", "Previously hydrated note body"
+	if err := st.UpsertNote(ctx, model.Note{ID: "doc-1", Type: "meeting", Title: &title, NotesMarkdown: &body}); err != nil {
+		t.Fatal(err)
+	}
+	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
+	result, syncErr := syncPrivateWithMessage(ctx, client, st, Options{}, false, "")
+	note, ok, err := st.GetNote(ctx, "doc-1")
+	if err != nil || !ok || note.NotesMarkdown == nil || *note.NotesMarkdown != body || note.Title == nil || *note.Title != title {
+		t.Fatalf("batch failure replaced archived note: %#v, exists=%v, err=%v", note, ok, err)
+	}
+	if syncErr == nil || !strings.Contains(syncErr.Error(), "granola api returned 500") || result.Notes != 0 {
+		t.Fatalf("failed sync = %#v, error = %v", result, syncErr)
+	}
+	assertNoOKSyncRun(t, ctx, st)
+}
+
 func TestSyncPrivateConsumesExplicitDeleteFeedAndTombstonesChildren(t *testing.T) {
 	ctx := context.Background()
 	deleted := false

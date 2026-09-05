@@ -36,7 +36,7 @@ make release
 gh workflow run release-unified.yml --repo openclaw/graincrawl -f version=X.Y.Z
 ```
 
-The pipeline freezes an annotated `v0.3.3` tag, runs the GoReleaser matrix,
+The pipeline freezes an annotated `v<version>` tag, runs the GoReleaser matrix,
 signs every Darwin binary as
 `org.openclaw.graincrawl.graincrawl` with
 `Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)`, notarizes the
@@ -57,8 +57,8 @@ RPM workflows download their package type from the published tag and verify
 each package against the pipeline's `SHA256SUMS` before upload:
 
 ```bash
-gh workflow run publish-apt.yml -f tag_name=v0.3.3
-gh workflow run publish-rpm.yml -f tag_name=v0.3.3
+gh workflow run publish-apt.yml -f tag_name=v0.4.2
+gh workflow run publish-rpm.yml -f tag_name=v0.4.2
 ```
 
 ## Legacy Manual Tools
@@ -99,12 +99,12 @@ path.
 If Cloudsmith publishing needs to be retried after the GitHub release exists:
 
 ```bash
-gh workflow run publish-apt.yml -f tag_name=v0.3.3
-gh workflow run publish-rpm.yml -f tag_name=v0.3.3
+gh workflow run publish-apt.yml -f tag_name=v0.4.2
+gh workflow run publish-rpm.yml -f tag_name=v0.4.2
 ```
 
 If the unified Homebrew handoff needs a manual fallback:
 
 ```bash
-gh workflow run homebrew-tap.yml -f tag_name=v0.3.3
+gh workflow run homebrew-tap.yml -f tag_name=v0.4.2
 ```

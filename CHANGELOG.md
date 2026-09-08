@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Preserve private API notes during desktop-cache fallback and reject older updates from the same source without losing deletion evidence.
+- Include a stable note-ID digest in Markdown filenames to prevent same-title exports overwriting one another; existing export files are not removed.
+- Include archived summaries in Markdown exports and human-readable `note get` output.
+
 ## 0.4.2 - 2026-09-05
 
 **Highlights:** Private API sync now fails instead of reporting success when Granola data cannot be fetched, alongside safer snapshot imports and bounded API responses and retry waits.

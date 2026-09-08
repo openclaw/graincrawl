@@ -504,6 +504,14 @@ func TestRunFallsBackToDesktopCacheWhenPrivateAPICredentialsAreMissing(t *testin
 		t.Fatal(err)
 	}
 	defer st.Close()
+	now := time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)
+	body, summary := "API body", "API summary"
+	if err := st.UpsertNote(ctx, model.Note{
+		ID: "doc1", Type: "meeting", CreatedAt: now, UpdatedAt: now,
+		LastSeenAt: now, Source: model.SourcePrivateAPI, NotesPlain: &body, SummaryText: &summary,
+	}); err != nil {
+		t.Fatal(err)
+	}
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
 			ProfilePath:       profile,
@@ -519,6 +527,14 @@ func TestRunFallsBackToDesktopCacheWhenPrivateAPICredentialsAreMissing(t *testin
 	}
 	if result.Source != model.SourceDesktopCache || result.Notes != 1 {
 		t.Fatalf("expected implicit sync to import the desktop cache, got %#v", result)
+	}
+	note, ok, err := st.GetNote(ctx, "doc1")
+	if err != nil || !ok || note.Source != model.SourcePrivateAPI || !note.UpdatedAt.Equal(now) || note.NotesPlain == nil || *note.NotesPlain != body || note.SummaryText == nil || *note.SummaryText != summary {
+		t.Fatalf("fallback replaced canonical API data: %+v %v", note, err)
+	}
+	var retained int
+	if err := st.DB().QueryRowContext(ctx, "SELECT count(*) FROM source_objects WHERE source = 'desktop-cache' AND source_id = 'doc1'").Scan(&retained); err != nil || retained != 1 {
+		t.Fatalf("fallback observation missing: count=%d err=%v", retained, err)
 	}
 	if _, err := Run(ctx, cfg, st, Options{Source: model.SourcePrivateAPI}); !errors.Is(err, ErrPrivateAPITokenNotFound) {
 		t.Fatalf("explicit private-api should report missing authentication, got %v", err)

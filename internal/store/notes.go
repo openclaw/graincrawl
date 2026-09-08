@@ -9,7 +9,28 @@ import (
 )
 
 func (s *Store) UpsertNote(ctx context.Context, note model.Note) error {
-	_, err := s.DB().ExecContext(ctx, `
+	tx, err := s.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var source, updated string
+	err = tx.QueryRowContext(ctx, "SELECT source, updated_at FROM notes WHERE id = ?", note.ID).Scan(&source, &updated)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	if err == nil && preserveCanonicalNote(model.Source(source), updated, note) {
+		// Content precedence must not discard independent deletion evidence.
+		if _, err := tx.ExecContext(ctx, `UPDATE notes SET
+			deleted_at=COALESCE(deleted_at, ?),
+			deletion_source=COALESCE(deletion_source, ?),
+			deletion_reason=COALESCE(deletion_reason, ?)
+			WHERE id = ?`, timePtr(note.DeletedAt), nullableString(note.DeletionSource), nullableString(note.DeletionReason), note.ID); err != nil {
+			return err
+		}
+		return tx.Commit()
+	}
+	_, err = tx.ExecContext(ctx, `
 INSERT INTO notes (
   id, title, type, status, created_at, updated_at, deleted_at, workspace_id,
   calendar_event_id, notes_plain, notes_markdown, summary_text,
@@ -38,7 +59,24 @@ ON CONFLICT(id) DO UPDATE SET
 		note.CalendarEventID, note.NotesPlain, note.NotesMarkdown, note.SummaryText,
 		note.SummaryMarkdown, string(note.Source), note.PayloadHash, note.LastSeenAt.Format(time.RFC3339Nano),
 		nullableString(note.DeletionSource), nullableString(note.DeletionReason))
-	return err
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func preserveCanonicalNote(source model.Source, updated string, incoming model.Note) bool {
+	cache := func(s model.Source) bool {
+		return s == model.SourceDesktopCache || s == model.SourceEncryptedJSON
+	}
+	if source == model.SourcePrivateAPI && cache(incoming.Source) {
+		return true
+	}
+	if source == incoming.Source || (cache(source) && cache(incoming.Source)) {
+		previous, err := time.Parse(time.RFC3339Nano, updated)
+		return err == nil && incoming.UpdatedAt.Before(previous)
+	}
+	return false
 }
 
 func (s *Store) ListNotes(ctx context.Context, limit int) ([]model.Note, error) {

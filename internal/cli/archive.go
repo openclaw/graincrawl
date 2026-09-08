@@ -108,11 +108,17 @@ func printNote(w io.Writer, note model.Note) {
 	if text := stringValue(note.NotesMarkdown); text != "" {
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, text)
-		return
-	}
-	if text := stringValue(note.NotesPlain); text != "" {
+	} else if text := stringValue(note.NotesPlain); text != "" {
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, text)
+	}
+	summary := stringValue(note.SummaryMarkdown)
+	if summary == "" {
+		summary = stringValue(note.SummaryText)
+	}
+	if summary != "" {
+		fmt.Fprintln(w, "\nSummary")
+		fmt.Fprintln(w, summary)
 	}
 }
 

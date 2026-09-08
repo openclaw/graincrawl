@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -30,8 +31,19 @@ func Markdown(ctx context.Context, st *store.Store, outDir string, limit int) (M
 		return MarkdownResult{}, err
 	}
 	result := MarkdownResult{OutDir: outDir}
-	for _, note := range notes {
-		path := filepath.Join(outDir, noteFilename(note))
+	paths := make([]string, len(notes))
+	seen := make(map[string]bool, len(notes))
+	for i, note := range notes {
+		name := noteFilename(note)
+		key := strings.ToLower(name)
+		if seen[key] {
+			return MarkdownResult{}, fmt.Errorf("duplicate Markdown output filename")
+		}
+		seen[key] = true
+		paths[i] = filepath.Join(outDir, name)
+	}
+	for i, note := range notes {
+		path := paths[i]
 		if err := os.WriteFile(path, []byte(renderNote(ctx, st, note)), 0o600); err != nil {
 			return MarkdownResult{}, err
 		}
@@ -53,6 +65,11 @@ func renderNote(ctx context.Context, st *store.Store, note model.Note) string {
 		b.WriteString("\n\n")
 	} else if text := valueOr(note.NotesPlain, ""); text != "" {
 		b.WriteString(text)
+		b.WriteString("\n\n")
+	}
+	if summary := valueOr(note.SummaryMarkdown, valueOr(note.SummaryText, "")); summary != "" {
+		b.WriteString("## Summary\n\n")
+		b.WriteString(summary)
 		b.WriteString("\n\n")
 	}
 	if chunks, err := st.ListTranscript(ctx, note.ID); err == nil && len(chunks) > 0 {
@@ -81,7 +98,7 @@ func renderNote(ctx context.Context, st *store.Store, note model.Note) string {
 func noteFilename(note model.Note) string {
 	title := safeFilename(valueOr(note.Title, note.ID))
 	date := note.CreatedAt.Format("2006-01-02")
-	return fmt.Sprintf("%s-%s.md", date, title)
+	return fmt.Sprintf("%s-%s-%x.md", date, title, sha256.Sum256([]byte(note.ID)))
 }
 
 var filenameCleaner = regexp.MustCompile(`[^A-Za-z0-9._-]+`)

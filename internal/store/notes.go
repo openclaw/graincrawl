@@ -15,11 +15,21 @@ func (s *Store) UpsertNote(ctx context.Context, note model.Note) error {
 	}
 	defer tx.Rollback()
 	var source, updated string
-	err = tx.QueryRowContext(ctx, "SELECT source, updated_at FROM notes WHERE id = ?", note.ID).Scan(&source, &updated)
+	var deletionOnly bool
+	// Only TombstoneDocument's empty placeholder lacks all content metadata and
+	// uses the deletion observation for every timestamp. It is not source content.
+	err = tx.QueryRowContext(ctx, `SELECT source, updated_at, COALESCE(
+		type = 'unknown' AND deleted_at IS NOT NULL
+		AND title IS NULL AND status IS NULL AND workspace_id IS NULL
+		AND calendar_event_id IS NULL AND notes_plain IS NULL AND notes_markdown IS NULL
+		AND summary_text IS NULL AND summary_markdown IS NULL AND payload_hash IS NULL
+		AND created_at = deleted_at AND updated_at = deleted_at AND last_seen_at = deleted_at
+		AND source = deletion_source AND deletion_reason <> '', 0)
+		FROM notes WHERE id = ?`, note.ID).Scan(&source, &updated, &deletionOnly)
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
-	if err == nil && preserveCanonicalNote(model.Source(source), updated, note) {
+	if err == nil && !deletionOnly && preserveCanonicalNote(model.Source(source), updated, note) {
 		// Content precedence must not discard independent deletion evidence.
 		if _, err := tx.ExecContext(ctx, `UPDATE notes SET
 			deleted_at=COALESCE(deleted_at, ?),

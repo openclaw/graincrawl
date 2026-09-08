@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Allow deletion-only placeholders to acquire archived content while retaining note and child tombstones and normal precedence for populated notes.
 - Preserve private API notes during desktop-cache fallback and reject older updates from the same source without losing deletion evidence.
 - Include a stable note-ID digest in Markdown filenames to prevent same-title exports overwriting one another; existing export files are not removed.
 - Include archived summaries in Markdown exports and human-readable `note get` output.

@@ -96,15 +96,5 @@ func syncPublic(ctx context.Context, client *publicapi.Client, st *store.Store, 
 		cursor = *page.Cursor
 	}
 
-	completed := time.Now().UTC()
-	_, _ = st.InsertSyncRun(ctx, model.SyncRun{
-		Source:      source,
-		StartedAt:   started,
-		CompletedAt: completed,
-		Status:      "ok",
-		Notes:       result.Notes,
-		Transcripts: result.Transcripts,
-		Message:     result.Message,
-	})
-	return result, nil
+	return completeSync(ctx, st, started, result)
 }

@@ -95,7 +95,5 @@ func importDesktopCache(ctx context.Context, st *store.Store, opts Options, file
 			result.Deleted++
 		}
 	}
-	completed := time.Now().UTC()
-	_, _ = st.InsertSyncRun(ctx, model.SyncRun{Source: source, StartedAt: started, CompletedAt: completed, Status: "ok", Notes: result.Notes, Transcripts: result.Transcripts, Panels: result.Panels, Message: result.Message})
-	return result, nil
+	return completeSync(ctx, st, started, result)
 }

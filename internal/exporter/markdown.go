@@ -44,7 +44,11 @@ func Markdown(ctx context.Context, st *store.Store, outDir string, limit int) (M
 	}
 	for i, note := range notes {
 		path := paths[i]
-		if err := os.WriteFile(path, []byte(renderNote(ctx, st, note)), 0o600); err != nil {
+		text, err := renderNote(ctx, st, note)
+		if err != nil {
+			return MarkdownResult{}, err
+		}
+		if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
 			return MarkdownResult{}, err
 		}
 		result.Files = append(result.Files, path)
@@ -53,7 +57,7 @@ func Markdown(ctx context.Context, st *store.Store, outDir string, limit int) (M
 	return result, nil
 }
 
-func renderNote(ctx context.Context, st *store.Store, note model.Note) string {
+func renderNote(ctx context.Context, st *store.Store, note model.Note) (string, error) {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# %s\n\n", valueOr(note.Title, note.ID))
 	fmt.Fprintf(&b, "- id: `%s`\n", note.ID)
@@ -72,14 +76,22 @@ func renderNote(ctx context.Context, st *store.Store, note model.Note) string {
 		b.WriteString(summary)
 		b.WriteString("\n\n")
 	}
-	if chunks, err := st.ListTranscript(ctx, note.ID); err == nil && len(chunks) > 0 {
+	chunks, err := st.ListTranscript(ctx, note.ID)
+	if err != nil {
+		return "", fmt.Errorf("read transcript for Markdown export: %w", err)
+	}
+	if len(chunks) > 0 {
 		b.WriteString("## Transcript\n\n")
 		for _, chunk := range chunks {
 			fmt.Fprintf(&b, "- `%s` %s\n", chunk.StartTimestamp.Format("15:04:05"), chunk.Text)
 		}
 		b.WriteString("\n")
 	}
-	if panels, err := st.ListPanels(ctx, note.ID); err == nil && len(panels) > 0 {
+	panels, err := st.ListPanels(ctx, note.ID)
+	if err != nil {
+		return "", fmt.Errorf("read panels for Markdown export: %w", err)
+	}
+	if len(panels) > 0 {
 		b.WriteString("## Panels\n\n")
 		for _, panel := range panels {
 			fmt.Fprintf(&b, "### %s\n\n", valueOr(panel.Title, panel.ID))
@@ -92,7 +104,7 @@ func renderNote(ctx context.Context, st *store.Store, note model.Note) string {
 			}
 		}
 	}
-	return b.String()
+	return b.String(), nil
 }
 
 func noteFilename(note model.Note) string {

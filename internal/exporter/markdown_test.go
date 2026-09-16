@@ -76,3 +76,44 @@ func TestMarkdownExportsNoteTranscriptAndPanels(t *testing.T) {
 		}
 	}
 }
+
+func TestMarkdownReadFailurePreservesExistingExport(t *testing.T) {
+	for _, table := range []string{"transcript_chunks", "document_panels"} {
+		t.Run(table, func(t *testing.T) {
+			ctx := context.Background()
+			st, err := store.Open(ctx, filepath.Join(t.TempDir(), "archive.db"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer st.Close()
+			note := model.Note{ID: "doc-1", Type: "meeting"}
+			if err := st.UpsertNote(ctx, note); err != nil {
+				t.Fatal(err)
+			}
+			out := t.TempDir()
+			first, err := Markdown(ctx, st, out, 10)
+			if err != nil || first.Count != 1 {
+				t.Fatalf("empty child sections are valid: %+v %v", first, err)
+			}
+			original, err := os.ReadFile(first.Files[0])
+			if err != nil {
+				t.Fatal(err)
+			}
+			title := "Changed title inside the file"
+			note.NotesPlain = &title
+			if err := st.UpsertNote(ctx, note); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := st.DB().ExecContext(ctx, "DROP TABLE "+table); err != nil {
+				t.Fatal(err)
+			}
+			if result, err := Markdown(ctx, st, out, 10); err == nil || !strings.Contains(err.Error(), table) {
+				t.Fatalf("missing child data must fail export: %+v %v", result, err)
+			}
+			got, err := os.ReadFile(first.Files[0])
+			if err != nil || string(got) != string(original) {
+				t.Fatalf("failed render changed existing export: %q %v", got, err)
+			}
+		})
+	}
+}

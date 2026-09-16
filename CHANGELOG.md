@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Report archive read and completion-record write errors instead of silently exporting incomplete Markdown or reporting successful syncs; preserve the affected note's existing export on read failure.
 - Update CrawlKit to v0.15.0 while retaining the Go 1.27.1 minimum.
 - Allow deletion-only placeholders to acquire archived content while retaining note and child tombstones and normal precedence for populated notes.
 - Preserve private API notes during desktop-cache fallback and reject older updates from the same source without losing deletion evidence.

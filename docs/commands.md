@@ -39,6 +39,8 @@ Private API sync stops and exits nonzero if an enabled transcript or panel fetch
 
 Public API rate-limit responses are retried up to three times. Each `Retry-After` wait is capped at 60 seconds, so a distant retry date or oversized delay cannot stall sync for hours.
 
+All sync sources exit nonzero if the completed run cannot be recorded in the archive. Already archived data remains available; rerun sync once the database write failure is resolved.
+
 ## Read the archive
 
 | Command | Purpose |
@@ -65,6 +67,8 @@ The TUI detail pane is assembled from the SQLite archive, including note text, t
 | `graincrawl import --replace <snapshot-dir>` | Restore exactly, removing rows absent from the snapshot. |
 
 Merge imports keep existing local payloads on identity conflicts and preserve tombstones found on either side.
+
+Markdown export exits nonzero if a note's transcript or panels cannot be read. The affected note's output file is left unchanged; files exported earlier in the run remain. Empty transcript and panel sections are valid.
 
 Snapshot shard paths must be relative to the snapshot directory. Imports reject absolute paths and paths that traverse outside that directory.
 

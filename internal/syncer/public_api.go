@@ -37,6 +37,7 @@ func syncPublic(ctx context.Context, client *publicapi.Client, st *store.Store, 
 	}
 
 	cursor := ""
+	seenCursors := make(map[string]bool)
 	for opts.Limit <= 0 || result.Notes < opts.Limit {
 		pageSize := 30
 		if remaining := opts.Limit - result.Notes; opts.Limit > 0 && remaining < pageSize {
@@ -90,10 +91,11 @@ func syncPublic(ctx context.Context, client *publicapi.Client, st *store.Store, 
 		if !page.HasMore {
 			break
 		}
-		if page.Cursor == nil || *page.Cursor == "" || *page.Cursor == cursor {
+		if page.Cursor == nil || *page.Cursor == "" || seenCursors[*page.Cursor] {
 			return result, errors.New("granola public API returned an invalid pagination cursor")
 		}
 		cursor = *page.Cursor
+		seenCursors[cursor] = true
 	}
 
 	return completeSync(ctx, st, started, result)

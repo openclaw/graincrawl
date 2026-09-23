@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Stop public API sync with an error when pagination revisits any cursor, preventing repeated page cycles from looping indefinitely.
 - Update CrawlKit to v0.16.5 for snapshot import fixes and SQLite to v1.59.0 with its matching libc runtime; retain the Go 1.27.1 minimum. Thanks @dependabot.
 - Replace Markdown exports atomically with private permissions, preserving previous files on write failure and avoiding writes through symbolic or hard links.
 - Report archive read and completion-record write errors instead of silently exporting incomplete Markdown or reporting successful syncs; preserve the affected note's existing export on read failure.

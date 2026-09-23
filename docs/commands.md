@@ -70,6 +70,8 @@ Merge imports keep existing local payloads on identity conflicts and preserve to
 
 Markdown export exits nonzero if a note's transcript or panels cannot be read. The affected note's output file is left unchanged; files exported earlier in the run remain. Empty transcript and panel sections are valid.
 
+Each Markdown file is written completely before replacing its destination, with owner-only read/write permissions (`0600`). Existing symbolic and hard links are replaced without changing their targets. A write or replacement failure leaves the previous destination intact.
+
 Snapshot shard paths must be relative to the snapshot directory. Imports reject absolute paths and paths that traverse outside that directory.
 
 ## Security and diagnostics

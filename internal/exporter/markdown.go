@@ -48,13 +48,30 @@ func Markdown(ctx context.Context, st *store.Store, outDir string, limit int) (M
 		if err != nil {
 			return MarkdownResult{}, err
 		}
-		if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+		if err := writeMarkdown(path, text); err != nil {
 			return MarkdownResult{}, err
 		}
 		result.Files = append(result.Files, path)
 	}
 	result.Count = len(result.Files)
 	return result, nil
+}
+
+func writeMarkdown(path, text string) error {
+	file, err := os.CreateTemp(filepath.Dir(path), ".graincrawl-*.tmp")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(file.Name())
+	defer file.Close()
+	if _, err := file.WriteString(text); err != nil {
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
+	}
+	// Replace the directory entry only after writing a complete private file.
+	return os.Rename(file.Name(), path)
 }
 
 func renderNote(ctx context.Context, st *store.Store, note model.Note) (string, error) {

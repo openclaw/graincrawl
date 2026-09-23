@@ -24,6 +24,7 @@ func TestSyncPublicRejectsPaginationCycles(t *testing.T) {
 					http.Error(w, "pagination did not stop", http.StatusInternalServerError)
 					return
 				}
+				t.Logf("GET %s -> cursor=%q, hasMore=true, notes=[]", r.URL.RequestURI(), cursors[i])
 				writeJSON(t, w, fmt.Sprintf(`{"notes":[],"hasMore":true,"cursor":%q}`, cursors[i]))
 			}))
 			defer srv.Close()
@@ -42,6 +43,7 @@ func TestSyncPublicRejectsPaginationCycles(t *testing.T) {
 				t.Fatalf("requested %d pages, want %d", got, len(cursors))
 			}
 			assertNoOKSyncRun(t, ctx, st)
+			t.Logf("requests=%d, sync_error=%q; no successful sync run recorded", requests.Load(), err)
 		})
 	}
 }

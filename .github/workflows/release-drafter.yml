@@ -36,10 +36,12 @@ jobs:
     if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
     steps:
       - name: Draft release notes
         uses: release-drafter/release-drafter@v7
+        with:
+          dry-run: "true"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

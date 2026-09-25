@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 0.4.4 - 2026-09-25
 
 Includes all changes since the last published release, `v0.4.2`. This is the

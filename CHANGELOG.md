@@ -1,6 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Use the source commit's committer timestamp in UTC for GoReleaser binary build metadata instead of the build start time, so independent builds do not differ solely by their embedded date.
+
 ## 0.4.3 - 2026-09-25
+
+**Release status:** `v0.4.3` was tagged, but its binary release was not published
+because the independent rebuild byte comparison failed.
 
 - Stop public API sync with an error when pagination revisits any cursor, preventing repeated page cycles from looping indefinitely.
 - Update CrawlKit to v0.16.5 for snapshot import fixes and SQLite to v1.59.0 with its matching libc runtime; retain the Go 1.27.1 minimum. Thanks @dependabot.

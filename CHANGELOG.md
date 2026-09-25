@@ -1,16 +1,20 @@
 # Changelog
 
-## Unreleased
+## 0.4.3 - 2026-09-25
 
 - Stop public API sync with an error when pagination revisits any cursor, preventing repeated page cycles from looping indefinitely.
 - Update CrawlKit to v0.16.5 for snapshot import fixes and SQLite to v1.59.0 with its matching libc runtime; retain the Go 1.27.1 minimum. Thanks @dependabot.
 - Replace Markdown exports atomically with private permissions, preserving previous files on write failure and avoiding writes through symbolic or hard links.
 - Report archive read and completion-record write errors instead of silently exporting incomplete Markdown or reporting successful syncs; preserve the affected note's existing export on read failure.
-- Update CrawlKit to v0.15.0 while retaining the Go 1.27.1 minimum.
 - Allow deletion-only placeholders to acquire archived content while retaining note and child tombstones and normal precedence for populated notes.
 - Preserve private API notes during desktop-cache fallback and reject older updates from the same source without losing deletion evidence.
 - Include a stable note-ID digest in Markdown filenames to prevent same-title exports overwriting one another; existing export files are not removed.
 - Include archived summaries in Markdown exports and human-readable `note get` output.
+- Independently rebuild non-Darwin release binaries and compare their bytes before publication.
+
+**Upgrade notes:** No database schema migration is required. Existing Markdown
+export files are retained. Failed syncs may retain completed writes while
+returning an error.
 
 ## 0.4.2 - 2026-09-05
 

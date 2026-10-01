@@ -3,6 +3,18 @@
 `graincrawl` ships through GitHub Releases, Homebrew tap updates, and optional
 Cloudsmith APT/RPM repositories.
 
+macOS binaries require macOS 13 Ventura or newer, matching the
+[Go 1.27 minimum](https://go.dev/doc/go1.27#darwin). The GoReleaser builds disable
+CGO and use Go's default deployment target. Before publishing, inspect both
+Darwin architectures from a snapshot or draft release:
+
+```bash
+otool -l path/to/darwin_amd64/graincrawl | grep -A3 LC_BUILD_VERSION
+otool -l path/to/darwin_arm64/graincrawl | grep -A3 LC_BUILD_VERSION
+```
+
+Both must report `minos 13.0`; a higher target would exclude supported Macs.
+
 ## Local Checks
 
 ```bash

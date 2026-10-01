@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.4.5 - 2026-10-01
+
+**Highlights:** Refresh SQLite and CrawlKit while keeping the Go 1.27.1 minimum.
+
 - Update SQLite to v1.60.1 with its matching libc runtime while retaining the Go 1.27.1 minimum.
 - Update CrawlKit to v0.16.7 to stay current with the shared crawler toolkit. Thanks @vincentkoc.
 - Update CrawlKit to v0.16.6 to stay current with the shared crawler toolkit.

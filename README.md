@@ -12,6 +12,8 @@
 
 ## Install
 
+macOS binaries require macOS 13 Ventura or newer, matching the Go 1.27 minimum.
+
 With Homebrew:
 
 ```bash

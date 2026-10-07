@@ -57,6 +57,8 @@ All sync sources exit nonzero if the completed run cannot be recorded in the arc
 | `graincrawl sql <query>` | Run a read-only SQL query against the archive. |
 | `graincrawl tui --limit <n>` | Browse archived notes in the terminal. |
 
+Search matches literal substrings across note titles, bodies, summaries, transcripts, and panel content. Queries and archived text use the same Unicode lowercase conversion, so `ÉMILE` matches `Émile`. Percent signs, underscores, and backslashes remain literal characters; search does not rewrite archived text.
+
 The TUI detail pane is assembled from the SQLite archive, including note text, transcript chunks, panels, and retained source metadata.
 
 ## Export and portability

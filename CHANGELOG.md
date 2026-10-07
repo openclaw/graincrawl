@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Match Unicode case consistently when searching note titles, bodies, summaries, transcripts, and panels, while preserving literal search terms. Thanks @SebTardif.
+
 ## 0.4.5 - 2026-10-01
 
 **Highlights:** Refresh SQLite and CrawlKit while keeping the Go 1.27.1 minimum.

@@ -43,7 +43,7 @@ deps: ## Verify module metadata and known vulnerabilities.
 
 lint: vet ## Run static analysis enforced by CI.
 	@output_file="$$(mktemp)"; trap 'rm -f "$$output_file"' EXIT; \
-	if ! GOWORK=off go run golang.org/x/tools/cmd/deadcode@v0.50.0 -test ./... > "$$output_file"; then \
+	if ! GOWORK=off go run golang.org/x/tools/cmd/deadcode@v0.51.0 -test ./... > "$$output_file"; then \
 		cat "$$output_file"; exit 1; \
 	fi; \
 	if [ -s "$$output_file" ]; then cat "$$output_file"; exit 1; fi

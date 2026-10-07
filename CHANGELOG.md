@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Match Unicode case consistently when searching note titles, bodies, summaries, transcripts, and panels, while preserving literal search terms. Thanks @SebTardif.
+- Update go-strftime to v1.1.0, deadcode tooling to v0.51.0, and TruffleHog to v3.99.0, retaining the Go 1.27.1 minimum.
 
 ## 0.4.5 - 2026-10-01
 

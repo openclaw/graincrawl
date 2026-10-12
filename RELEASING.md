@@ -14,8 +14,8 @@ Dispatch from main with `version` set to a dated changelog version and
 `dry_run=true` (default) for a full signing and verification rehearsal. Existing
 historical tags do not redirect the rehearsal away from current main. No tag,
 draft, release, tap update, or closeout PR is created during the rehearsal.
-The immutable shared-workflow pin includes the new dry-run contract; the fleet
-compatibility tag is left for the next separately authorized shared release.
+The shared workflow uses the fleet `@v1` compatibility tag, which includes
+protected-main validation for no-publish rehearsals.
 
 Required secrets are `MACOS_SIGNING_P12`, `MACOS_SIGNING_P12_PASSWORD`,
 `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_P8`, and `HOMEBREW_TAP_TOKEN`.

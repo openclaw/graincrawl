@@ -1,8 +1,14 @@
 name: Release (unified)
 
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
     inputs:
+      dry_run:
+        description: Build, sign and verify without publishing
+        type: boolean
+        default: true
       version:
         description: SemVer to release
         required: true
@@ -18,9 +24,13 @@ jobs:
       contents: write
       pull-requests: write
       statuses: read
-    uses: openclaw/release-workflows/.github/workflows/release-go-cli.yml@v1
+    uses: openclaw/release-workflows/.github/workflows/release-go-cli.yml@93d1c4e7ae6b27022954c847b63ed4998a6b7062
     with:
-      version: ${{ inputs.version }}
+      version: ${{ inputs.version || github.ref_name }}
+      dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+      require-signed-tag: true
+      strict-checks: true
+      ci-check-events: '["push"]'
       repository-type: openclaw
       homebrew-tap: openclaw/homebrew-tap
       homebrew-formula: graincrawl

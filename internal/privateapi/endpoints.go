@@ -10,8 +10,19 @@ func (c Client) GetDocuments(ctx context.Context, req DocumentsRequest) (Documen
 
 func (c Client) GetDocumentsBatch(ctx context.Context, ids []string) (BatchResponse, error) {
 	var out BatchResponse
-	err := c.Do(ctx, "/v1/get-documents-batch", BatchRequest{DocumentIDs: ids}, &out)
-	return out, err
+	const batchSize = 50
+	for start := 0; start < len(ids); start += batchSize {
+		end := start + batchSize
+		if end > len(ids) {
+			end = len(ids)
+		}
+		var batch BatchResponse
+		if err := c.Do(ctx, "/v1/get-documents-batch", BatchRequest{DocumentIDs: ids[start:end]}, &batch); err != nil {
+			return out, err
+		}
+		out.Docs = append(out.Docs, batch.Docs...)
+	}
+	return out, nil
 }
 
 func (c Client) GetDocumentTranscript(ctx context.Context, id string) ([]TranscriptChunk, error) {

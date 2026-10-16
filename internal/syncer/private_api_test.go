@@ -114,6 +114,52 @@ func TestSyncPrivateFailsWhenBatchHydrateErrors(t *testing.T) {
 	}
 }
 
+func TestSyncPrivateLaterBatchFailurePreventsWrites(t *testing.T) {
+	ctx := context.Background()
+	docs := make([]privateapi.Document, 101)
+	for i := range docs {
+		docs[i] = privateapi.Document{ID: fmt.Sprintf("doc-%d", i), Type: "meeting"}
+	}
+	var calls atomic.Int32
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewEncoder(w).Encode(privateapi.DocumentsResponse{Docs: docs, Deleted: []string{"deleted-doc"}}); err != nil {
+			t.Errorf("encode document list: %v", err)
+		}
+	})
+	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 2 {
+			http.Error(w, "upstream unavailable", http.StatusInternalServerError)
+			return
+		}
+		if err := json.NewEncoder(w).Encode(privateapi.BatchResponse{Docs: docs[:50]}); err != nil {
+			t.Errorf("encode hydrated documents: %v", err)
+		}
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	client := privateapi.Client{BaseURL: srv.URL}
+	result, syncErr := syncPrivateWithMessage(ctx, client, st, Options{}, false, "")
+	if syncErr == nil || !strings.Contains(syncErr.Error(), "granola api returned 500") || result.Notes != 0 || calls.Load() != 2 {
+		t.Fatalf("failed sync = %#v, error = %v, batch calls = %d", result, syncErr, calls.Load())
+	}
+	for _, id := range []string{"doc-0", "doc-50", "deleted-doc"} {
+		if _, ok, err := st.GetNote(ctx, id); err != nil || ok {
+			t.Fatalf("note %s after later batch failure: exists=%v err=%v", id, ok, err)
+		}
+	}
+	objects, err := st.ListSourceObjects(ctx, "", 10)
+	if err != nil || len(objects) != 0 {
+		t.Fatalf("source objects after later batch failure = %#v, err=%v", objects, err)
+	}
+	assertNoOKSyncRun(t, ctx, st)
+}
+
 func TestSyncPrivateBatchFailurePreservesArchivedBody(t *testing.T) {
 	ctx := context.Background()
 	mux := http.NewServeMux()

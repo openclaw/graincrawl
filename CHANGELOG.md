@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Hydrate private API documents in batches of at most 50 IDs so larger archives sync without HTTP 400 errors, retaining fail-fast archive protection if any batch fails. Thanks @ejadib.
+
 - Build with Go 1.27.2 to include standard-library security fixes required by the release vulnerability gate.
 
 - Match Unicode case consistently when searching note titles, bodies, summaries, transcripts, and panels, while preserving literal search terms. Thanks @SebTardif.

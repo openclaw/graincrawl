@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Hydrate private API documents in batches of at most 50 IDs so larger archives sync without HTTP 400 errors, retaining fail-fast archive protection if any batch fails. Thanks @ejadib.
+- Update the SQLite libc runtime to v1.78.0, GoReleaser to v2.18.3, govulncheck to v1.9.0, and deadcode tooling to v0.52.0; align source-install documentation with the existing Go 1.27.2 minimum.
 
 - Build with Go 1.27.2 to include standard-library security fixes required by the release vulnerability gate.
 

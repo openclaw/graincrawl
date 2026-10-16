@@ -2,12 +2,14 @@
 
 ## Unreleased
 
+## 0.4.6 - 2026-10-16
+
+**Highlights:** Fix large-archive private API sync and Unicode search matching, and include Go standard-library security fixes.
+
 - Hydrate private API documents in batches of at most 50 IDs so larger archives sync without HTTP 400 errors, retaining fail-fast archive protection if any batch fails. Thanks @ejadib.
-- Update the SQLite libc runtime to v1.78.0, GoReleaser to v2.18.3, govulncheck to v1.9.0, and deadcode tooling to v0.52.0; align source-install documentation with the existing Go 1.27.2 minimum.
-
-- Build with Go 1.27.2 to include standard-library security fixes required by the release vulnerability gate.
-
 - Match Unicode case consistently when searching note titles, bodies, summaries, transcripts, and panels, while preserving literal search terms. Thanks @SebTardif.
+- Build with Go 1.27.2 to include standard-library security fixes required by the release vulnerability gate.
+- Update the SQLite libc runtime to v1.78.0, GoReleaser to v2.18.3, govulncheck to v1.9.0, and deadcode tooling to v0.52.0; align source-install documentation with the existing Go 1.27.2 minimum.
 - Update go-strftime to v1.1.0, deadcode tooling to v0.51.0, and TruffleHog to v3.99.0, retaining the Go 1.27.1 minimum.
 
 ## 0.4.5 - 2026-10-01

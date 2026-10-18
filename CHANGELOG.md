@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- CI: use macOS 27 for release verification and both CLI architectures, run Intel binaries under Rosetta, and enforce the macOS 13.0 minimum.
 ## 0.4.6 - 2026-10-16
 
 **Highlights:** Fix large-archive private API sync and Unicode search matching, and include Go standard-library security fixes.

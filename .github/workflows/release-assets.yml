@@ -21,10 +21,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runs-on: macos-15
+          - runs-on: xcode-27
             arch: arm64
-          - runs-on: macos-15-intel
+            exec_arch: arm64
+          - runs-on: xcode-27
             arch: amd64
+            exec_arch: x86_64
     runs-on: ${{ matrix.runs-on }}
     env:
       RELEASE_TAG: ${{ inputs.tag_name }}
@@ -34,6 +36,10 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
+
+      - name: Ensure Rosetta for Intel verification
+        if: matrix.arch == 'amd64'
+        run: bash scripts/ensure-rosetta.sh
 
       - name: Download release assets
         shell: bash
@@ -63,4 +69,5 @@ jobs:
           version="${RELEASE_TAG#v}"
           archive="artifacts/graincrawl_${version}_darwin_${{ matrix.arch }}.tar.gz"
           env -u GH_TOKEN -u GITHUB_TOKEN \
+            /usr/bin/arch -${{ matrix.exec_arch }} /bin/bash \
             scripts/verify-graincrawl-release.sh "${RELEASE_TAG}" "${archive}"

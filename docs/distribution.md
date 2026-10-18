@@ -14,6 +14,8 @@ otool -l path/to/darwin_arm64/graincrawl | grep -A3 LC_BUILD_VERSION
 ```
 
 Both must report `minos 13.0`; a higher target would exclude supported Macs.
+CI builds and executes both architectures on the Apple Silicon `xcode-27`
+runner, using Rosetta for x86_64, and checks this minimum automatically.
 
 ## Local Checks
 
@@ -78,6 +80,8 @@ gh workflow run publish-rpm.yml -f tag_name=v0.4.2
 `release-legacy.yml`, `release-assets.yml`, and `homebrew-tap.yml` are
 manual-only fallbacks. They exist to validate or recover releases made by the
 old local signing path and never trigger from tags or release publication.
+The legacy macOS asset verifier also uses `xcode-27`; its Intel job asserts
+Rosetta support and runs the verifier under `arch -x86_64`.
 `make release-artifacts` remains an alias for the fail-closed `release` target,
 and `scripts/package-graincrawl-release.sh` also points maintainers to
 `release-unified.yml`; the former local path could sign macOS binaries without

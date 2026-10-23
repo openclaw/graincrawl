@@ -35,6 +35,8 @@ graincrawl [--json] [--config <path>] [--version] <command> [args]
 
 Public API sync rejects missing or repeated pagination cursors instead of requesting the same pages indefinitely. Notes already archived remain available, but the failed run is not recorded as successful.
 
+Desktop-cache sync processes notes by update time, newest first, then creation time and note ID to break ties. A limited sync, including the default limit of 100, therefore consistently archives the newest notes. This ordering also applies to unlocked encrypted desktop caches.
+
 Private API document hydration uses sequential batches of at most 50 IDs, skipping the request when there are no IDs. All batches must succeed before notes are written. A failed batch request stops sync with a nonzero exit and no successful sync-run record; the deletion feed is also deferred, even when earlier batches succeeded. Existing archived notes stay unchanged, though workspace metadata may already have been retained. A successful empty batch response keeps the listed documents. Rerun sync after the upstream failure clears.
 
 Private API sync stops and exits nonzero if an enabled transcript or panel fetch fails. It does not record a successful sync run. Writes completed before the error remain in the archive; later documents and the deletion feed are not processed. Rerun the same sync after the upstream failure clears to finish hydration and process deletions. Existing records are updated by identity rather than duplicated. Successful empty responses are valid, and `--no-transcripts` or `--no-panels` skips the corresponding fetch entirely.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -729,5 +730,58 @@ func makeNewer(t *testing.T, olderPath, newerPath string) {
 	}
 	if err := os.Chtimes(newerPath, newer, newer); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestDesktopCacheLimitArchivesNewestDocumentsDeterministically(t *testing.T) {
+	ctx := context.Background()
+	documents := make(map[string]any)
+	for day := 1; day <= 9; day++ {
+		id := fmt.Sprintf("doc-%d", day)
+		documents[id] = map[string]any{
+			"id":         id,
+			"title":      id,
+			"type":       "meeting",
+			"created_at": fmt.Sprintf("2026-01-0%dT10:00:00.000Z", day),
+			"updated_at": fmt.Sprintf("2026-01-0%dT11:00:00.000Z", day),
+		}
+	}
+	raw, err := json.Marshal(map[string]any{"cache": map[string]any{"version": 6, "state": map[string]any{"documents": documents}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Go randomizes map iteration, so repeat to catch an order-dependent limit.
+	for attempt := 0; attempt < 20; attempt++ {
+		root := t.TempDir()
+		profile := filepath.Join(root, "Granola")
+		if err := os.MkdirAll(profile, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), raw, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		cfg := config.Config{
+			Granola: config.GranolaConfig{ProfilePath: profile, AllowDesktopCache: true},
+			Sync:    config.SyncConfig{DefaultLimit: 100},
+		}
+		if _, err := Run(ctx, cfg, st, Options{Source: model.SourceDesktopCache, Limit: 3}); err != nil {
+			t.Fatal(err)
+		}
+		notes, err := st.ListNotes(ctx, 100)
+		_ = st.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []string
+		for _, note := range notes {
+			got = append(got, note.ID)
+		}
+		if strings.Join(got, ",") != "doc-9,doc-8,doc-7" {
+			t.Fatalf("attempt %d: limited desktop cache sync archived %v, want the three newest documents", attempt, got)
+		}
 	}
 }

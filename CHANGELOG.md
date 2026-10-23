@@ -2,8 +2,14 @@
 
 ## Unreleased
 
-- CI: use macOS 27 for release verification and both CLI architectures, run Intel binaries under Rosetta, and enforce the macOS 13.0 minimum.
+## 0.4.7 - 2026-10-23
+
+**Highlights:** Archive the newest notes first during limited desktop-cache syncs, and build with Go 1.27.3 to fix reachable GO-2026-6809 by rejecting compromised eMudhra certificate keys.
+
 - Archive the most recently updated notes first when a desktop-cache sync is limited (including the default limit of 100), instead of a random subset. Thanks @parth-garg01.
+- Build with Go 1.27.3 to fix GO-2026-6809, rejecting compromised eMudhra certificate keys during certificate verification. Thanks @joshavant.
+- CI: use macOS 27 for release verification and both CLI architectures, run Intel binaries under Rosetta, and enforce the macOS 13.0 minimum.
+
 ## 0.4.6 - 2026-10-16
 
 **Highlights:** Fix large-archive private API sync and Unicode search matching, and include Go standard-library security fixes.

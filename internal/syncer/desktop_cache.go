@@ -3,6 +3,7 @@ package syncer
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/openclaw/graincrawl/internal/cachev6"
@@ -10,6 +11,7 @@ import (
 	"github.com/openclaw/graincrawl/internal/granola"
 	"github.com/openclaw/graincrawl/internal/model"
 	"github.com/openclaw/graincrawl/internal/store"
+	"github.com/openclaw/graincrawl/internal/timeutil"
 )
 
 func DesktopCache(ctx context.Context, cfg config.Config, st *store.Store, opts Options) (Result, error) {
@@ -46,7 +48,7 @@ func importDesktopCache(ctx context.Context, st *store.Store, opts Options, file
 	result := Result{Source: source, Message: message}
 	now := time.Now().UTC()
 	count := 0
-	for _, doc := range file.Cache.State.Documents {
+	for _, doc := range newestDocumentsFirst(file.Cache.State.Documents) {
 		if opts.Limit > 0 && count >= opts.Limit {
 			break
 		}
@@ -96,4 +98,35 @@ func importDesktopCache(ctx context.Context, st *store.Store, opts Options, file
 		}
 	}
 	return completeSync(ctx, st, started, result)
+}
+
+// newestDocumentsFirst orders cache documents by most recent update so a sync
+// limit keeps the newest notes instead of Go's random map iteration order.
+func newestDocumentsFirst(documents map[string]cachev6.Document) []cachev6.Document {
+	type entry struct {
+		doc     cachev6.Document
+		updated time.Time
+		created time.Time
+	}
+	entries := make([]entry, 0, len(documents))
+	for _, doc := range documents {
+		updated, _ := timeutil.Parse(doc.UpdatedAt)
+		created, _ := timeutil.Parse(doc.CreatedAt)
+		entries = append(entries, entry{doc: doc, updated: updated, created: created})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		a, b := entries[i], entries[j]
+		if !a.updated.Equal(b.updated) {
+			return a.updated.After(b.updated)
+		}
+		if !a.created.Equal(b.created) {
+			return a.created.After(b.created)
+		}
+		return a.doc.ID < b.doc.ID
+	})
+	ordered := make([]cachev6.Document, len(entries))
+	for i, e := range entries {
+		ordered[i] = e.doc
+	}
+	return ordered
 }

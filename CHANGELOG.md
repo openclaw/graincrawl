@@ -3,6 +3,7 @@
 ## Unreleased
 
 - CI: use macOS 27 for release verification and both CLI architectures, run Intel binaries under Rosetta, and enforce the macOS 13.0 minimum.
+- Archive the most recently updated notes first when a desktop-cache sync is limited (including the default limit of 100), instead of a random subset. Thanks @parth-garg01.
 ## 0.4.6 - 2026-10-16
 
 **Highlights:** Fix large-archive private API sync and Unicode search matching, and include Go standard-library security fixes.

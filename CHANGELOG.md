@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Update CrawlKit to v0.17.3 so SQLite lock waits honor context deadlines, with SQLite 3.54.1.
+
 ## 0.4.7 - 2026-10-23
 
 **Highlights:** Archive the newest notes first during limited desktop-cache syncs, and build with Go 1.27.3 to fix reachable GO-2026-6809 by rejecting compromised eMudhra certificate keys.

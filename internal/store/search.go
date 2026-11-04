@@ -57,13 +57,5 @@ LIMIT ?`, needle, needle, needle, needle, needle, needle, needle, needle, limit)
 		return nil, err
 	}
 	defer rows.Close()
-	var notes []model.Note
-	for rows.Next() {
-		note, err := scanNote(rows)
-		if err != nil {
-			return nil, err
-		}
-		notes = append(notes, note)
-	}
-	return notes, rows.Err()
+	return scanNotes(rows)
 }

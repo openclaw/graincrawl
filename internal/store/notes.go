@@ -104,15 +104,7 @@ LIMIT ?`, limit)
 		return nil, err
 	}
 	defer rows.Close()
-	var notes []model.Note
-	for rows.Next() {
-		note, err := scanNote(rows)
-		if err != nil {
-			return nil, err
-		}
-		notes = append(notes, note)
-	}
-	return notes, rows.Err()
+	return scanNotes(rows)
 }
 
 func (s *Store) GetNote(ctx context.Context, id string) (model.Note, bool, error) {
@@ -130,6 +122,18 @@ WHERE id = ?`, id)
 		return model.Note{}, false, err
 	}
 	return note, true, nil
+}
+
+func scanNotes(rows *sql.Rows) ([]model.Note, error) {
+	var notes []model.Note
+	for rows.Next() {
+		note, err := scanNote(rows)
+		if err != nil {
+			return nil, err
+		}
+		notes = append(notes, note)
+	}
+	return notes, rows.Err()
 }
 
 type noteScanner interface {

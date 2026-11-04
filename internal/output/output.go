@@ -6,13 +6,6 @@ import (
 	"io"
 )
 
-type Mode string
-
-const (
-	ModeText Mode = "text"
-	ModeJSON Mode = "json"
-)
-
 type Envelope struct {
 	OK     bool   `json:"ok"`
 	Result any    `json:"result,omitempty"`

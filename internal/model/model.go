@@ -10,7 +10,6 @@ const (
 	SourceDesktopCache  Source = "desktop-cache"
 	SourceEncryptedJSON Source = "encrypted-json"
 	SourceOPFS          Source = "opfs"
-	SourceCompanionCLI  Source = "companion-cli"
 )
 
 type Note struct {

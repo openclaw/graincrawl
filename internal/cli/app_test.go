@@ -11,61 +11,82 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openclaw/crawlkit/control"
 	"github.com/openclaw/graincrawl/internal/config"
 	"github.com/openclaw/graincrawl/internal/granola"
 	"github.com/openclaw/graincrawl/internal/model"
+	"github.com/openclaw/graincrawl/internal/output"
 	"github.com/openclaw/graincrawl/internal/store"
 )
 
 func TestAppStatusAndSecurityCommandsUseTempConfig(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME"} {
+		t.Setenv(name, filepath.Join(root, name))
+	}
 	cfgPath := writeTestConfig(t)
-	for _, command := range [][]string{
-		{"--json", "--config", cfgPath, "sources"},
-		{"--json", "--config", cfgPath, "unlock"},
-		{"--json", "--config", cfgPath, "secrets"},
-		{"--json", "--config", cfgPath, "completion"},
-		{"--json", "--config", cfgPath, "runs"},
-		{"--json", "--config", cfgPath, "people"},
-		{"--json", "--config", cfgPath, "workspaces"},
-	} {
+	run := func(args ...string) []byte {
+		t.Helper()
 		var out bytes.Buffer
 		app := App{Stdout: &out}
-		if err := app.Run(context.Background(), command); err != nil {
-			t.Fatalf("%v failed: %v", command, err)
+		if err := app.Run(context.Background(), args); err != nil {
+			t.Fatalf("%v failed: %v", args, err)
 		}
-		if !strings.Contains(out.String(), `"ok": true`) {
-			t.Fatalf("%v did not return ok envelope: %s", command, out.String())
+		return out.Bytes()
+	}
+	for _, command := range []string{"sources", "unlock", "secrets", "completion", "runs", "people", "workspaces"} {
+		raw := run("--json", "--config", cfgPath, command)
+		var envelope output.Envelope
+		if err := json.Unmarshal(raw, &envelope); err != nil {
+			t.Fatalf("%s envelope: %v\n%s", command, err, raw)
+		}
+		if !envelope.OK || envelope.Error != "" {
+			t.Fatalf("%s did not return a successful envelope: %s", command, raw)
 		}
 	}
-	var tuiOut bytes.Buffer
-	app := App{Stdout: &tuiOut}
-	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "tui"}); err != nil {
-		t.Fatalf("tui json failed: %v", err)
+
+	raw := run("--json", "--config", cfgPath, "tui")
+	var rows []map[string]any
+	if err := json.Unmarshal(raw, &rows); err != nil {
+		t.Fatalf("empty tui rows: %v\n%s", err, raw)
 	}
-	if !strings.Contains(tuiOut.String(), "[]") {
-		t.Fatalf("tui json did not return rows: %s", tuiOut.String())
+	if rows == nil || len(rows) != 0 {
+		t.Fatalf("empty tui must return an empty array: %s", raw)
 	}
-	for _, command := range [][]string{
-		{"--json", "--config", cfgPath, "metadata"},
+
+	for _, args := range [][]string{
 		{"--json", "--config", cfgPath, "status"},
+		{"--config", cfgPath, "status", "--json"},
 	} {
-		var out bytes.Buffer
-		app := App{Stdout: &out}
-		if err := app.Run(context.Background(), command); err != nil {
-			t.Fatalf("%v failed: %v", command, err)
+		raw := run(args...)
+		var status control.Status
+		if err := json.Unmarshal(raw, &status); err != nil {
+			t.Fatalf("%v status: %v\n%s", args, err, raw)
 		}
-		if !strings.Contains(out.String(), `"schema_version": "crawlkit.control.v1"`) {
-			t.Fatalf("%v did not return crawlkit control JSON: %s", command, out.String())
+		if status.SchemaVersion != "crawlkit.control.v1" || status.AppID != "graincrawl" ||
+			status.State != "ok" || status.ConfigPath != cfgPath {
+			t.Fatalf("%v returned unexpected status: %s", args, raw)
+		}
+		if !slices.ContainsFunc(status.Counts, func(count control.Count) bool {
+			return count.ID == "notes" && count.Value == 0
+		}) {
+			t.Fatalf("%v status lacks the empty archive's note count: %s", args, raw)
 		}
 	}
-	var metadataOut bytes.Buffer
-	metadataApp := App{Stdout: &metadataOut}
-	if err := metadataApp.Run(context.Background(), []string{"--json", "--config", cfgPath, "metadata"}); err != nil {
-		t.Fatalf("metadata failed: %v", err)
+
+	raw = run("--json", "--config", cfgPath, "metadata")
+	var manifest control.Manifest
+	if err := json.Unmarshal(raw, &manifest); err != nil {
+		t.Fatalf("metadata: %v\n%s", err, raw)
 	}
-	if !strings.Contains(metadataOut.String(), `"desktop-cache-import"`) ||
-		!strings.Contains(metadataOut.String(), `"desktop-cache"`) {
-		t.Fatalf("metadata did not expose desktop cache import: %s", metadataOut.String())
+	if manifest.SchemaVersion != "crawlkit.control.v1" || manifest.ID != "graincrawl" ||
+		manifest.Paths.DefaultConfig != cfgPath || !slices.Contains(manifest.Capabilities, "desktop-cache") {
+		t.Fatalf("unexpected metadata: %s", raw)
+	}
+	command := manifest.Commands["desktop-cache-import"]
+	if !command.JSON || !command.Mutates || !slices.Equal(command.Argv,
+		[]string{"graincrawl", "sync", "--source", "desktop-cache", "--json"}) {
+		t.Fatalf("unexpected desktop cache import command: %#v", command)
 	}
 }
 
@@ -476,19 +497,6 @@ func TestAppPreservesFlagLikeCommandArguments(t *testing.T) {
 	}
 	if !strings.Contains(searchOut.String(), "--config") {
 		t.Fatalf("search output lost flag-like query: %s", searchOut.String())
-	}
-}
-
-func TestAppAcceptsGlobalFlagsAfterCommand(t *testing.T) {
-	cfgPath := writeTestConfig(t)
-	var out bytes.Buffer
-	app := App{Stdout: &out}
-
-	if err := app.Run(context.Background(), []string{"--config", cfgPath, "status", "--json"}); err != nil {
-		t.Fatalf("status with trailing --json failed: %v", err)
-	}
-	if !strings.Contains(out.String(), `"schema_version"`) || !strings.Contains(out.String(), `"counts"`) {
-		t.Fatalf("status with trailing --json did not emit JSON: %s", out.String())
 	}
 }
 

@@ -21,3 +21,16 @@ The optional live API contract test remains opt-in; no credentials or releases
 are required for this cleanup.
 
 Remaining: complete the semantic audit of the other packages and crawl apps.
+
+## CLI control contracts
+
+- Consolidated the exact duplicate metadata invocation and trailing-JSON status
+  fixture into the existing temporary-config command test.
+- Decode success envelopes, launcher metadata, both status flag positions, and
+  empty TUI rows instead of accepting JSON-looking substrings. Require the
+  desktop import command's arguments and flags, app identity, selected config,
+  and the empty archive's note count.
+- Keep the seeded TUI detail test and source-specific security tests. Isolate
+  the touched command test's home and XDG paths as well as its archive/profile.
+
+No CLI behavior, Granola data, or release artifacts changed.

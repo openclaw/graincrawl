@@ -20,25 +20,14 @@ import (
 func TestSyncPrivateHydratesDocumentBodyBeforeUpsert(t *testing.T) {
 	ctx := context.Background()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[{"id":"doc-1","title":"Planning","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
-	})
-	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[{"id":"doc-1","title":"Planning","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:02:00Z","notes_markdown":"hydrated note body"}]}`)
-	})
-	mux.HandleFunc("/v1/get-document-transcript", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `[]`)
-	})
-	mux.HandleFunc("/v1/get-document-panels", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `[]`)
-	})
+	serveJSON(t, mux, "/v2/get-documents", `{"docs":[{"id":"doc-1","title":"Planning","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
+	serveJSON(t, mux, "/v1/get-documents-batch", `{"docs":[{"id":"doc-1","title":"Planning","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:02:00Z","notes_markdown":"hydrated note body"}]}`)
+	serveJSON(t, mux, "/v1/get-document-transcript", `[]`)
+	serveJSON(t, mux, "/v1/get-document-panels", `[]`)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
 	if _, err := syncPrivateWithMessage(ctx, client, st, Options{Source: model.SourcePrivateAPI, Limit: 1}, false, ""); err != nil {
@@ -58,9 +47,7 @@ func TestSyncPrivateFailsWhenBatchHydrateErrors(t *testing.T) {
 	var failing atomic.Bool
 	failing.Store(true)
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[{"id":"doc-1","title":"Planning","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":["deleted-doc"],"shared":[]}`)
-	})
+	serveJSON(t, mux, "/v2/get-documents", `{"docs":[{"id":"doc-1","title":"Planning","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":["deleted-doc"],"shared":[]}`)
 	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
 		if failing.Load() {
 			http.Error(w, `{"error":"hydrate failed"}`, http.StatusInternalServerError)
@@ -71,10 +58,7 @@ func TestSyncPrivateFailsWhenBatchHydrateErrors(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
 	opts := Options{Source: model.SourcePrivateAPI, Limit: 1}
@@ -138,10 +122,7 @@ func TestSyncPrivateLaterBatchFailurePreventsWrites(t *testing.T) {
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	client := privateapi.Client{BaseURL: srv.URL}
 	result, syncErr := syncPrivateWithMessage(ctx, client, st, Options{}, false, "")
@@ -163,18 +144,13 @@ func TestSyncPrivateLaterBatchFailurePreventsWrites(t *testing.T) {
 func TestSyncPrivateBatchFailurePreservesArchivedBody(t *testing.T) {
 	ctx := context.Background()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[{"id":"doc-1","title":"Thin list document","type":"meeting"}],"deleted":[],"shared":[]}`)
-	})
+	serveJSON(t, mux, "/v2/get-documents", `{"docs":[{"id":"doc-1","title":"Thin list document","type":"meeting"}],"deleted":[],"shared":[]}`)
 	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "upstream unavailable", http.StatusInternalServerError)
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	title, body := "Archived document", "Previously hydrated note body"
 	if err := st.UpsertNote(ctx, model.Note{ID: "doc-1", Type: "meeting", Title: &title, NotesMarkdown: &body}); err != nil {
@@ -210,19 +186,12 @@ func TestSyncPrivateConsumesExplicitDeleteFeedAndTombstonesChildren(t *testing.T
 		}
 		writeJSON(t, w, `{"docs":[{"id":"doc-1","title":"Planning","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:02:00Z"}]}`)
 	})
-	mux.HandleFunc("/v1/get-document-transcript", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `[{"id":"chunk-1","document_id":"doc-1","start_timestamp":"2026-05-06T10:00:00Z","end_timestamp":"2026-05-06T10:00:01Z","source":"mic","is_final":true,"text":"retained transcript"}]`)
-	})
-	mux.HandleFunc("/v1/get-document-panels", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `[{"id":"panel-1","document_id":"doc-1","created_at":"2026-05-06T10:00:00Z","title":"Summary","content":{"text":"retained panel"}}]`)
-	})
+	serveJSON(t, mux, "/v1/get-document-transcript", `[{"id":"chunk-1","document_id":"doc-1","start_timestamp":"2026-05-06T10:00:00Z","end_timestamp":"2026-05-06T10:00:01Z","source":"mic","is_final":true,"text":"retained transcript"}]`)
+	serveJSON(t, mux, "/v1/get-document-panels", `[{"id":"panel-1","document_id":"doc-1","created_at":"2026-05-06T10:00:00Z","title":"Summary","content":{"text":"retained panel"}}]`)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
 	opts := Options{Source: model.SourcePrivateAPI, IncludeTranscripts: true, IncludePanels: true}
@@ -276,16 +245,11 @@ func TestSyncPrivateDoesNotDeleteNoteMerelyBecauseItWasNotSeen(t *testing.T) {
 		}
 		writeJSON(t, w, `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
 	})
-	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[]}`)
-	})
+	serveJSON(t, mux, "/v1/get-documents-batch", `{"docs":[]}`)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
 	if _, err := syncPrivateWithMessage(ctx, client, st, Options{}, false, ""); err != nil {
@@ -307,19 +271,12 @@ func TestSyncPrivateDoesNotDeleteNoteMerelyBecauseItWasNotSeen(t *testing.T) {
 func TestSyncPrivateRetainsUnknownExplicitDeleteAsStubTombstone(t *testing.T) {
 	ctx := context.Background()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[],"deleted":["unknown-doc"],"shared":[]}`)
-	})
-	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[]}`)
-	})
+	serveJSON(t, mux, "/v2/get-documents", `{"docs":[],"deleted":["unknown-doc"],"shared":[]}`)
+	serveJSON(t, mux, "/v1/get-documents-batch", `{"docs":[]}`)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
 	if _, err := syncPrivateWithMessage(ctx, client, st, Options{}, false, ""); err != nil {
@@ -347,22 +304,16 @@ func TestSyncPrivateReturnsHydrationFetchError(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			mux := http.NewServeMux()
-			mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
-				writeJSON(t, w, `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
-			})
-			mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
-				writeJSON(t, w, `{"docs":[]}`)
-			})
+			serveJSON(t, mux, "/v2/get-documents", `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
+			serveJSON(t, mux, "/v1/get-documents-batch", `{"docs":[]}`)
 			mux.HandleFunc(tc.endpoint, func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "upstream timeout", http.StatusInternalServerError)
 			})
 			srv := httptest.NewServer(mux)
 			defer srv.Close()
 
-			st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-			if err != nil {
-				t.Fatal(err)
-			}
+			st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+			var err error
 			defer st.Close()
 			client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
 			_, err = syncPrivateWithMessage(ctx, client, st, tc.options, false, "")
@@ -380,22 +331,13 @@ func TestSyncPrivateReturnsHydrationFetchError(t *testing.T) {
 func TestSyncPrivateRetainsPanelDeletedAtOnPanelAndSourceObject(t *testing.T) {
 	ctx := context.Background()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
-	})
-	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[]}`)
-	})
-	mux.HandleFunc("/v1/get-document-panels", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `[{"id":"panel-1","document_id":"doc-1","created_at":"2026-05-06T10:00:00Z","deleted_at":"2026-05-07T11:00:00Z"}]`)
-	})
+	serveJSON(t, mux, "/v2/get-documents", `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
+	serveJSON(t, mux, "/v1/get-documents-batch", `{"docs":[]}`)
+	serveJSON(t, mux, "/v1/get-document-panels", `[{"id":"panel-1","document_id":"doc-1","created_at":"2026-05-06T10:00:00Z","deleted_at":"2026-05-07T11:00:00Z"}]`)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
 	if _, err := syncPrivateWithMessage(ctx, client, st, Options{IncludePanels: true}, false, ""); err != nil {
@@ -450,10 +392,7 @@ func TestSyncPrivateHydrationFailureRetainsWritesAndCanRetry(t *testing.T) {
 				}
 			}))
 			defer srv.Close()
-			st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-			if err != nil {
-				t.Fatal(err)
-			}
+			st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 			defer st.Close()
 			client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
 			opts := Options{IncludeTranscripts: true, IncludePanels: true}
@@ -513,6 +452,22 @@ func assertDeletion(t *testing.T, label string, deletedAt *time.Time, source, re
 	if deletedAt == nil || source != string(model.SourcePrivateAPI) || reason != store.DeletionReasonExplicitFeed {
 		t.Fatalf("%s deletion = (%v, %q, %q)", label, deletedAt, source, reason)
 	}
+}
+
+func openSyncTestStore(t *testing.T, ctx context.Context, path string) *store.Store {
+	t.Helper()
+	st, err := store.Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return st
+}
+
+func serveJSON(t *testing.T, mux *http.ServeMux, path, body string) {
+	t.Helper()
+	mux.HandleFunc(path, func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(t, w, body)
+	})
 }
 
 func writeJSON(t *testing.T, w http.ResponseWriter, body string) {

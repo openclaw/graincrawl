@@ -12,7 +12,6 @@ import (
 	"github.com/openclaw/graincrawl/internal/model"
 	"github.com/openclaw/graincrawl/internal/privateapi"
 	"github.com/openclaw/graincrawl/internal/publicapi"
-	"github.com/openclaw/graincrawl/internal/store"
 )
 
 func TestSyncReportsCompletionWriteFailure(t *testing.T) {
@@ -21,12 +20,8 @@ func TestSyncReportsCompletionWriteFailure(t *testing.T) {
 	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(t, w, `{"docs":[`+document+`]}`)
 	})
-	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[]}`)
-	})
-	mux.HandleFunc("/v1/notes", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"notes":[{"id":"doc-1"}],"hasMore":false}`)
-	})
+	serveJSON(t, mux, "/v1/get-documents-batch", `{"docs":[]}`)
+	serveJSON(t, mux, "/v1/notes", `{"notes":[{"id":"doc-1"}],"hasMore":false}`)
 	mux.HandleFunc("/v1/notes/doc-1", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(t, w, document)
 	})
@@ -36,10 +31,7 @@ func TestSyncReportsCompletionWriteFailure(t *testing.T) {
 	for _, source := range []model.Source{model.SourcePrivateAPI, model.SourcePublicAPI, model.SourceDesktopCache, model.SourceEncryptedJSON} {
 		t.Run(string(source), func(t *testing.T) {
 			ctx := context.Background()
-			st, err := store.Open(ctx, filepath.Join(t.TempDir(), "archive.db"))
-			if err != nil {
-				t.Fatal(err)
-			}
+			st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "archive.db"))
 			defer st.Close()
 			if _, err := st.DB().ExecContext(ctx, `CREATE TRIGGER fail_sync_run BEFORE INSERT ON sync_runs BEGIN SELECT RAISE(ABORT, 'synthetic run write failure'); END`); err != nil {
 				t.Fatal(err)

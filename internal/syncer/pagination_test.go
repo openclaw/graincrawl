@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/openclaw/graincrawl/internal/publicapi"
-	"github.com/openclaw/graincrawl/internal/store"
 )
 
 func TestSyncPublicRejectsPaginationCycles(t *testing.T) {
@@ -29,10 +28,8 @@ func TestSyncPublicRejectsPaginationCycles(t *testing.T) {
 			}))
 			defer srv.Close()
 			ctx := context.Background()
-			st, err := store.Open(ctx, filepath.Join(t.TempDir(), "archive.db"))
-			if err != nil {
-				t.Fatal(err)
-			}
+			st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "archive.db"))
+			var err error
 			defer st.Close()
 			client := &publicapi.Client{BaseURL: srv.URL, RequestInterval: -1}
 			_, err = syncPublic(ctx, client, st, Options{})

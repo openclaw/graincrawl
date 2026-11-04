@@ -12,7 +12,6 @@ import (
 	"github.com/openclaw/graincrawl/internal/config"
 	"github.com/openclaw/graincrawl/internal/model"
 	"github.com/openclaw/graincrawl/internal/publicapi"
-	"github.com/openclaw/graincrawl/internal/store"
 )
 
 func TestSyncPublicArchivesSummariesAndTranscriptsAcrossPages(t *testing.T) {
@@ -34,16 +33,11 @@ func TestSyncPublicArchivesSummariesAndTranscriptsAcrossPages(t *testing.T) {
 		}
 		writeJSON(t, w, `{"id":"not_11111111111111","object":"note","title":"First","owner":{},"created_at":"2026-08-03T01:00:00Z","updated_at":"2026-08-03T02:00:00Z","calendar_event":{"calendar_event_id":"event-1"},"attendees":[],"folder_membership":[],"summary_text":"plain summary","summary_markdown":"## Summary","transcript":[{"speaker":{"source":"microphone","attribution":"me"},"text":"archived transcript","start_time":"2026-08-03T01:00:00Z","end_time":"2026-08-03T01:00:01Z"}]}`)
 	})
-	mux.HandleFunc("/v1/notes/not_22222222222222", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"id":"not_22222222222222","object":"note","title":"Second","owner":{},"created_at":"2026-08-03T03:00:00Z","updated_at":"2026-08-03T04:00:00Z","calendar_event":{},"attendees":[],"folder_membership":[],"summary_text":"","summary_markdown":null,"transcript":[]}`)
-	})
+	serveJSON(t, mux, "/v1/notes/not_22222222222222", `{"id":"not_22222222222222","object":"note","title":"Second","owner":{},"created_at":"2026-08-03T03:00:00Z","updated_at":"2026-08-03T04:00:00Z","calendar_event":{},"attendees":[],"folder_membership":[],"summary_text":"","summary_markdown":null,"transcript":[]}`)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	client := &publicapi.Client{BaseURL: srv.URL, APIKey: "test-key", RequestInterval: -1}
 	result, err := syncPublic(ctx, client, st, Options{Limit: 2, IncludeTranscripts: true, IncludePanels: true})
@@ -72,10 +66,7 @@ func TestSyncPublicArchivesSummariesAndTranscriptsAcrossPages(t *testing.T) {
 
 func TestRunPublicRequiresExplicitEnableAndEnvironmentKey(t *testing.T) {
 	ctx := context.Background()
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 
 	cfg := config.Config{Granola: config.GranolaConfig{AllowPublicAPI: false}}
@@ -99,10 +90,7 @@ func TestRunPublicIgnoresEncryptedLocalGranolaState(t *testing.T) {
 		writeJSON(t, w, `{"notes":[],"hasMore":false,"cursor":null}`)
 	}))
 	defer srv.Close()
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
 	defer st.Close()
 	t.Setenv(publicapi.KeyEnv, "test-key")
 	cfg := config.Config{

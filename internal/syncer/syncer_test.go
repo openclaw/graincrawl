@@ -29,10 +29,7 @@ func TestRunHonorsSkipTranscriptsForDesktopCache(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(raw), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -74,10 +71,7 @@ func TestRunAcceptsEmptyVersion8DesktopCache(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(raw), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -116,10 +110,7 @@ func TestRunDesktopCacheCascadesExplicitDeletedAtTombstone(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(raw), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{ProfilePath: profile, AllowDesktopCache: true},
@@ -170,10 +161,7 @@ func TestRunExplainsEncryptedOnlyDesktopCache(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -221,10 +209,7 @@ func TestRunDefaultSyncFallsBackWithEncryptedOnlyDiagnostic(t *testing.T) {
 		}
 	}
 	makeNewer(t, supabasePath, supabaseEncPath)
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -264,10 +249,7 @@ func TestRunRejectsNewerEncryptedDesktopCache(t *testing.T) {
 		t.Fatal(err)
 	}
 	makeNewer(t, cachePath, cacheEncPath)
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -297,10 +279,7 @@ func TestRunBlocksPostMigrationLocalSourcesBeforeDecrypt(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -352,10 +331,7 @@ func TestRunAllowsPlaintextSourceWhenOnlyOtherStateIsEncrypted(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(raw), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -386,10 +362,7 @@ func TestRunMigratedImplicitSyncWithoutAnyCacheReportsMigrationBlock(t *testing.
 	if err := os.WriteFile(filepath.Join(profile, encryptedjson.SupabaseFile), []byte("encrypted"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -425,10 +398,7 @@ func TestRunImplicitPrivateAPIFallsBackToPlaintextCacheWhenMigrated(t *testing.T
 	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(raw), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -463,10 +433,7 @@ func TestRunFallsBackToDesktopCacheForImplicitExpiredPrivateAPI(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(profile, "supabase.json"), []byte(supabaseRaw), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -500,10 +467,7 @@ func TestRunFallsBackToDesktopCacheWhenPrivateAPICredentialsAreMissing(t *testin
 	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), []byte(cacheRaw), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	now := time.Date(2026, 8, 2, 0, 0, 0, 0, time.UTC)
 	body, summary := "API body", "API summary"
@@ -563,10 +527,7 @@ func TestRunImportsEncryptedDesktopCacheOnlyWithExplicitUnlock(t *testing.T) {
 		t.Fatal(err)
 	}
 	makeNewer(t, cachePath, cacheEncPath)
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -608,10 +569,8 @@ func TestRunImportsEncryptedDesktopCacheOnlyWithExplicitUnlock(t *testing.T) {
 func TestRunEncryptedUnlockRequiresConfigApproval(t *testing.T) {
 	ctx := context.Background()
 	root := t.TempDir()
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
+	var err error
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -655,10 +614,7 @@ func TestRunEncryptedSupabaseChecksDecryptedToken(t *testing.T) {
 		t.Fatal(err)
 	}
 	makeNewer(t, cachePath, cacheEncryptedPath)
-	st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 	defer st.Close()
 	cfg := config.Config{
 		Granola: config.GranolaConfig{
@@ -760,10 +716,7 @@ func TestDesktopCacheLimitArchivesNewestDocumentsDeterministically(t *testing.T)
 		if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), raw, 0o600); err != nil {
 			t.Fatal(err)
 		}
-		st, err := store.Open(ctx, filepath.Join(root, "graincrawl.db"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
 		cfg := config.Config{
 			Granola: config.GranolaConfig{ProfilePath: profile, AllowDesktopCache: true},
 			Sync:    config.SyncConfig{DefaultLimit: 100},

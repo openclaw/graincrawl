@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Share one Linux CI worker and Go cache for dependency checks, static analysis, tests, and CLI smoke checks.
+
 - Build and verify both macOS architectures on one CI worker, sharing setup and a cache containing both targets while retaining macOS 13 and Intel execution checks.
 
 ## 0.4.8 - 2026-10-26

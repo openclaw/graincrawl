@@ -57,9 +57,9 @@ jobs:
               ./bin/graincrawl --json version | grep -q '"version"'
           done
 
-  deps:
+  test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -69,6 +69,9 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+          cache-dependency-path: |
+            go.sum
+            .github/workflows/ci.yml
 
       - name: Verify module cache
         run: GOWORK=off go mod verify
@@ -83,19 +86,6 @@ jobs:
 
       - name: Run govulncheck
         run: GOWORK=off "$(go env GOPATH)/bin/govulncheck" ./...
-
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-          cache: true
 
       - name: Check formatting
         run: |
@@ -119,19 +109,6 @@ jobs:
             cat "$output_file"
             exit 1
           fi
-
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-          cache: true
 
       - name: Test
         run: GOWORK=off go test -count=1 ./...

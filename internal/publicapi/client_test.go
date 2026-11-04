@@ -16,7 +16,9 @@ func TestClientPaginatesAndIncludesTranscript(t *testing.T) {
 	var requests []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer test-key" {
-			t.Fatalf("authorization header = %q", r.Header.Get("Authorization"))
+			t.Errorf("authorization header = %q", r.Header.Get("Authorization"))
+			http.Error(w, "invalid test request", http.StatusBadRequest)
+			return
 		}
 		requests = append(requests, r.URL.RequestURI())
 		w.Header().Set("Content-Type", "application/json")

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Build and verify both macOS architectures on one CI worker, sharing setup and a cache containing both targets while retaining macOS 13 and Intel execution checks.
+
 ## 0.4.8 - 2026-10-26
 
 **Highlights:** Honor context deadlines while waiting for SQLite locks, and update SQLite to 3.54.1 through CrawlKit v0.17.3.

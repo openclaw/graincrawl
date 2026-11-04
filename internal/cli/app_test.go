@@ -459,29 +459,6 @@ func TestAppSQLRunsReadOnlyQueries(t *testing.T) {
 func TestAppPreservesFlagLikeCommandArguments(t *testing.T) {
 	ctx := context.Background()
 	cfgPath := writeTestConfig(t)
-	cfg, _, err := config.Load(cfgPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	st, err := store.Open(ctx, cfg.Paths.DBPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	title := "Flag Check"
-	if err := st.UpsertNote(ctx, model.Note{
-		ID:         "doc-flag",
-		Title:      &title,
-		Type:       "meeting",
-		CreatedAt:  time.Date(2026, 5, 6, 10, 0, 0, 0, time.UTC),
-		UpdatedAt:  time.Date(2026, 5, 6, 10, 0, 0, 0, time.UTC),
-		Source:     model.SourcePrivateAPI,
-		LastSeenAt: time.Date(2026, 5, 6, 10, 0, 0, 0, time.UTC),
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := st.Close(); err != nil {
-		t.Fatal(err)
-	}
 
 	var sqlOut bytes.Buffer
 	app := App{Stdout: &sqlOut}
@@ -516,12 +493,29 @@ func TestAppAcceptsGlobalFlagsAfterCommand(t *testing.T) {
 }
 
 func TestAppPreservesTrailingJSONSearchArgument(t *testing.T) {
+	ctx := context.Background()
 	cfgPath := writeTestConfig(t)
+	cfg, _, err := config.Load(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(ctx, cfg.Paths.DBPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	title := "literal --json query"
+	if err := st.UpsertNote(ctx, model.Note{ID: "literal-json", Title: &title, Type: "meeting"}); err != nil {
+		t.Fatal(err)
+	}
+
 	var out bytes.Buffer
 	app := App{Stdout: &out}
-
-	if err := app.Run(context.Background(), []string{"--config", cfgPath, "search", "--json"}); err != nil {
+	if err := app.Run(ctx, []string{"--config", cfgPath, "search", "--json"}); err != nil {
 		t.Fatalf("search with literal trailing --json failed: %v", err)
+	}
+	if got := out.String(); !strings.HasPrefix(got, "literal-json\t"+title+"\t") {
+		t.Fatalf("literal --json search lost its match or changed output format: %q", got)
 	}
 }
 

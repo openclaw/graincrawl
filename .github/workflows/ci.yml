@@ -57,9 +57,9 @@ jobs:
               ./bin/graincrawl --json version | grep -q '"version"'
           done
 
-  deps:
+  test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -69,6 +69,9 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+          cache-dependency-path: |
+            go.sum
+            .github/workflows/ci.yml
 
       - name: Verify module cache
         run: GOWORK=off go mod verify
@@ -83,19 +86,6 @@ jobs:
 
       - name: Run govulncheck
         run: GOWORK=off "$(go env GOPATH)/bin/govulncheck" ./...
-
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-          cache: true
 
       - name: Check formatting
         run: |
@@ -119,19 +109,6 @@ jobs:
             cat "$output_file"
             exit 1
           fi
-
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-          cache: true
 
       - name: Test
         run: GOWORK=off go test -count=1 ./...
@@ -162,6 +139,21 @@ jobs:
           env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" --json status | grep -q '"databases"'
           env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" --json tui | grep -q '^\['
           env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" --json snapshot create --out "$tmp/snapshot" | grep -q '"manifest"'
+
+  # Preserve required check names without repeating validation setup.
+  validation-status:
+    name: ${{ matrix.check }}
+    needs: test
+    if: ${{ always() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [deps, lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require successful Linux validation
+        run: test "${{ needs.test.result }}" = success
 
   release-check:
     runs-on: ubuntu-latest

@@ -335,66 +335,46 @@ func TestSyncPrivateRetainsUnknownExplicitDeleteAsStubTombstone(t *testing.T) {
 	assertDeletion(t, "stub note", note.DeletedAt, note.DeletionSource, note.DeletionReason)
 }
 
-func TestSyncPrivateReturnsTranscriptFetchError(t *testing.T) {
-	ctx := context.Background()
-	mux := http.NewServeMux()
-	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
-	})
-	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[]}`)
-	})
-	mux.HandleFunc("/v1/get-document-transcript", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "upstream timeout", http.StatusInternalServerError)
-	})
-	srv := httptest.NewServer(mux)
-	defer srv.Close()
+func TestSyncPrivateReturnsHydrationFetchError(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		endpoint string
+		options  Options
+	}{
+		{"transcript", "/v1/get-document-transcript", Options{IncludeTranscripts: true}},
+		{"panel", "/v1/get-document-panels", Options{IncludePanels: true}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			mux := http.NewServeMux()
+			mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
+				writeJSON(t, w, `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
+			})
+			mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
+				writeJSON(t, w, `{"docs":[]}`)
+			})
+			mux.HandleFunc(tc.endpoint, func(w http.ResponseWriter, r *http.Request) {
+				http.Error(w, "upstream timeout", http.StatusInternalServerError)
+			})
+			srv := httptest.NewServer(mux)
+			defer srv.Close()
 
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
+			st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer st.Close()
+			client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
+			_, err = syncPrivateWithMessage(ctx, client, st, tc.options, false, "")
+			if err == nil {
+				t.Fatalf("expected %s fetch error", tc.name)
+			}
+			if !strings.Contains(err.Error(), "granola api returned 500") {
+				t.Fatalf("error = %v", err)
+			}
+			assertNoOKSyncRun(t, ctx, st)
+		})
 	}
-	defer st.Close()
-	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
-	_, err = syncPrivateWithMessage(ctx, client, st, Options{IncludeTranscripts: true}, false, "")
-	if err == nil {
-		t.Fatal("expected transcript fetch error")
-	}
-	if !strings.Contains(err.Error(), "granola api returned 500") {
-		t.Fatalf("error = %v", err)
-	}
-	assertNoOKSyncRun(t, ctx, st)
-}
-
-func TestSyncPrivateReturnsPanelFetchError(t *testing.T) {
-	ctx := context.Background()
-	mux := http.NewServeMux()
-	mux.HandleFunc("/v2/get-documents", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[{"id":"doc-1","type":"meeting","created_at":"2026-05-06T10:00:00Z","updated_at":"2026-05-06T10:01:00Z"}],"deleted":[],"shared":[]}`)
-	})
-	mux.HandleFunc("/v1/get-documents-batch", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(t, w, `{"docs":[]}`)
-	})
-	mux.HandleFunc("/v1/get-document-panels", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "upstream timeout", http.StatusInternalServerError)
-	})
-	srv := httptest.NewServer(mux)
-	defer srv.Close()
-
-	st, err := store.Open(ctx, filepath.Join(t.TempDir(), "graincrawl.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer st.Close()
-	client := privateapi.Client{BaseURL: srv.URL, AccessToken: "token"}
-	_, err = syncPrivateWithMessage(ctx, client, st, Options{IncludePanels: true}, false, "")
-	if err == nil {
-		t.Fatal("expected panel fetch error")
-	}
-	if !strings.Contains(err.Error(), "granola api returned 500") {
-		t.Fatalf("error = %v", err)
-	}
-	assertNoOKSyncRun(t, ctx, st)
 }
 
 func TestSyncPrivateRetainsPanelDeletedAtOnPanelAndSourceObject(t *testing.T) {

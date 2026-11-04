@@ -474,6 +474,7 @@ func writeJSON(t *testing.T, w http.ResponseWriter, body string) {
 	t.Helper()
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write([]byte(body)); err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	}
 }

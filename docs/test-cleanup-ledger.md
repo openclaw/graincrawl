@@ -50,3 +50,18 @@ no-cache migration block, encrypted-only cache, and expired-token cases.
 Validation: syncer race tests, complete `make check` including isolated built
 CLI smoke and credential-free snapshots, independent review, and PR CI.
 No production behavior, live Granola data, credentials, or releases changed.
+
+## HTTP fixture failure paths
+
+- Replace three fatal request assertions in public-API HTTP and ServeMux
+  callbacks with nonfatal errors, HTTP 400, and immediate returns. Keep every
+  authorization/cursor/transcript check and successful payload unchanged.
+- Report shared JSON response-write failures nonfatally and return without
+  another response attempt. Callers finish their handlers after the writer.
+- Forced authorization, cursor, and transcript-include failures reproduce EOF
+  before the change and keep their diagnostics with HTTP 400 afterward. A failed
+  writer probe verifies normal return while preserving its error diagnostic.
+- Root-test assertions and persisted note/summary/transcript/source-object
+  checks remain intact. Validate with publicapi/syncer race tests, full local
+  gates, isolated CLI smoke, credential-free snapshots, independent review, and
+  PR CI. No live Granola profiles, archives, credentials, APIs, or releases.

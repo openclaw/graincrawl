@@ -24,12 +24,16 @@ func TestSyncPublicArchivesSummariesAndTranscriptsAcrossPages(t *testing.T) {
 		case "next":
 			writeJSON(t, w, `{"notes":[{"id":"not_22222222222222","object":"note","title":"Second","owner":{},"created_at":"2026-08-03T03:00:00Z","updated_at":"2026-08-03T04:00:00Z"}],"hasMore":false,"cursor":null}`)
 		default:
-			t.Fatalf("unexpected cursor %q", r.URL.Query().Get("cursor"))
+			t.Errorf("unexpected cursor %q", r.URL.Query().Get("cursor"))
+			http.Error(w, "invalid test request", http.StatusBadRequest)
+			return
 		}
 	})
 	mux.HandleFunc("/v1/notes/not_11111111111111", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("include") != "transcript" {
-			t.Fatalf("include = %q", r.URL.Query().Get("include"))
+			t.Errorf("include = %q", r.URL.Query().Get("include"))
+			http.Error(w, "invalid test request", http.StatusBadRequest)
+			return
 		}
 		writeJSON(t, w, `{"id":"not_11111111111111","object":"note","title":"First","owner":{},"created_at":"2026-08-03T01:00:00Z","updated_at":"2026-08-03T02:00:00Z","calendar_event":{"calendar_event_id":"event-1"},"attendees":[],"folder_membership":[],"summary_text":"plain summary","summary_markdown":"## Summary","transcript":[{"speaker":{"source":"microphone","attribution":"me"},"text":"archived transcript","start_time":"2026-08-03T01:00:00Z","end_time":"2026-08-03T01:00:01Z"}]}`)
 	})

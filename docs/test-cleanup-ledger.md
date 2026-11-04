@@ -34,3 +34,19 @@ Remaining: complete the semantic audit of the other packages and crawl apps.
   the touched command test's home and XDG paths as well as its archive/profile.
 
 No CLI behavior, Granola data, or release artifacts changed.
+
+## Plaintext desktop-cache source selection
+
+Consolidated two nearly identical profile fixtures into one test with named
+explicit desktop-cache and implicit private-API fallback cases. Both routes
+still run separately against their own temporary profile and SQLite archive;
+only the repeated setup and assertions are shared.
+
+Both cases now require one imported note, the selected desktop-cache source,
+and the archived note's exact synthetic title/body/source. The old checks could
+pass without proving that the plaintext document reached the archive. Kept the
+no-cache migration block, encrypted-only cache, and expired-token cases.
+
+Validation: syncer race tests, complete `make check` including isolated built
+CLI smoke and credential-free snapshots, independent review, and PR CI.
+No production behavior, live Granola data, credentials, or releases changed.

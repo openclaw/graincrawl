@@ -140,6 +140,21 @@ jobs:
           env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" --json tui | grep -q '^\['
           env HOME="$tmp/home" XDG_CONFIG_HOME="$tmp/xdg-config" XDG_CACHE_HOME="$tmp/xdg-cache" XDG_STATE_HOME="$tmp/xdg-state" ./bin/graincrawl --config "$cfg" --json snapshot create --out "$tmp/snapshot" | grep -q '"manifest"'
 
+  # Preserve required check names without repeating validation setup.
+  validation-status:
+    name: ${{ matrix.check }}
+    needs: test
+    if: ${{ always() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [deps, lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require successful Linux validation
+        run: test "${{ needs.test.result }}" = success
+
   release-check:
     runs-on: ubuntu-latest
     timeout-minutes: 15

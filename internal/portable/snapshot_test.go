@@ -81,6 +81,16 @@ func TestImportMergesByDefaultAndReplaceIsExplicit(t *testing.T) {
 	if _, ok, err := destination.GetNote(ctx, "snapshot-only"); err != nil || !ok {
 		t.Fatalf("replace lost snapshot note: ok=%v err=%v", ok, err)
 	}
+	shared, ok, err := destination.GetNote(ctx, "shared-id")
+	if err != nil || !ok {
+		t.Fatalf("replaced shared note: ok=%v err=%v", ok, err)
+	}
+	if shared.Title == nil || *shared.Title != "Snapshot version" {
+		t.Fatalf("replace retained destination payload: %#v", shared)
+	}
+	if shared.DeletedAt != nil || shared.DeletionSource != "" || shared.DeletionReason != "" {
+		t.Fatalf("replace retained destination tombstone: %#v", shared)
+	}
 	assertImportedLegacyTombstones(t, ctx, destination)
 }
 

@@ -145,3 +145,17 @@ No production behavior, live Granola data, credentials, or releases changed.
 - Validate the exact simplification with existing store, portable and syncer
   race suites, full `make check`, independent review and platform CI. No new
   fixtures, tests, public APIs, live Granola data, credentials or releases.
+
+## CLI snapshot roundtrip
+
+- Replace the empty-archive, same-database smoke with one synthetic note exported
+  and imported through CLI commands into a separate temporary archive. Require
+  the destination note's title, body and source, checking lookup errors/presence.
+- Decode each command's JSON envelope and require success, the selected snapshot
+  directory, the expected import mode and a nonempty manifest.
+- A no-op import returning a real manifest and an import ignoring its destination
+  config both pass the old test and fail the repaired test. Independent title,
+  body and source corruption faults also fail under the race detector.
+- Validate with CLI race tests, full `make check`, a built-CLI roundtrip between
+  isolated databases, independent review and platform CI. No production changes,
+  live Granola data, credentials or releases.

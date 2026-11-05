@@ -77,18 +77,11 @@ LIMIT ?`, kind, kind, limit)
 	return objects, rows.Err()
 }
 
-type sourceObjectScanner interface {
-	Scan(dest ...any) error
-}
-
-func scanSourceObject(scanner sourceObjectScanner) (SourceObject, error) {
+func scanSourceObject(rows *sql.Rows) (SourceObject, error) {
 	var obj SourceObject
 	var source, observed string
 	var deleted, deletionSource, deletionReason sql.NullString
-	if err := scanner.Scan(&source, &obj.Kind, &obj.SourceID, &obj.DocumentID, &obj.PayloadJSON, &obj.PayloadHash, &observed, &deleted, &deletionSource, &deletionReason); err != nil {
-		if err == sql.ErrNoRows {
-			return SourceObject{}, err
-		}
+	if err := rows.Scan(&source, &obj.Kind, &obj.SourceID, &obj.DocumentID, &obj.PayloadJSON, &obj.PayloadHash, &observed, &deleted, &deletionSource, &deletionReason); err != nil {
 		return SourceObject{}, err
 	}
 	obj.Source = model.Source(source)

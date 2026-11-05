@@ -133,3 +133,15 @@ No production behavior, live Granola data, credentials, or releases changed.
   with granola/doctor race tests, full `make check`, independent review and
   platform CI. No production behavior, live Granola data, credentials or
   releases change.
+
+## Source-object row scanner
+
+- Remove the one-use source-object scanner interface. Its only caller passes
+  `*sql.Rows` after `Next`, matching the existing panel scanner's concrete input.
+- Remove the nested `sql.ErrNoRows` branch, which returned the same zero object
+  and original error as the fallback. Keep the scan order, SQL, field mapping,
+  timestamps and error propagation unchanged. The note scanner still accepts
+  both row and rows inputs and retains its actual missing-note handling.
+- Validate the exact simplification with existing store, portable and syncer
+  race suites, full `make check`, independent review and platform CI. No new
+  fixtures, tests, public APIs, live Granola data, credentials or releases.

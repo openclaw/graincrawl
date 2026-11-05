@@ -90,3 +90,18 @@ No production behavior, live Granola data, credentials, or releases changed.
 - Run store race tests, full `make check`, independent review and platform CI.
   Only synthetic temporary archives and credential-free build artifacts are used;
   no production behavior, Granola data, credentials or releases change.
+
+## Snapshot replacement of shared notes
+
+- Require the existing merge/replace test to find the shared note after explicit
+  replacement, restore its snapshot title, and clear the destination's deletion
+  timestamp, source and reason. Keep the default merge assertions and legacy
+  tombstone reconciliation checks intact.
+- The original test passed a generic replacement fault that retained overlapping
+  destination notes' payload and tombstones. The repaired test rejects that fault,
+  each independently retained field, and omission of previously tombstoned notes
+  under the race detector; the healthy implementation passes.
+- Validate with portable race tests, full `make check`, independent review and
+  platform CI. Only synthetic temporary archives and credential-free build
+  artifacts are used; no production behavior, Granola data, credentials or
+  releases change.

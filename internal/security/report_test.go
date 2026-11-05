@@ -69,13 +69,18 @@ func TestMigratedProfileBlocksLocalSourcesAndUnlock(t *testing.T) {
 		}
 	}
 	paths := granola.Paths(profile, "")
+	blockedSources := make(map[model.Source]bool)
 	for _, source := range Sources(cfg, paths) {
 		switch source.Source {
 		case "private-api", "desktop-cache", "encrypted-json":
+			blockedSources[source.Source] = true
 			if source.Allowed || source.Notes != granola.PostMigrationStateMessage {
 				t.Fatalf("migrated source support = %#v", source)
 			}
 		}
+	}
+	if len(blockedSources) != 3 {
+		t.Fatalf("migrated local sources missing: got %v", blockedSources)
 	}
 
 	// A migrated profile whose plaintext cache is still usable must keep
@@ -87,17 +92,23 @@ func TestMigratedProfileBlocksLocalSourcesAndUnlock(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(mixed, "cache-v6.json"), []byte("{}"), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	mixedSources := make(map[model.Source]bool)
 	for _, source := range Sources(cfg, granola.Paths(mixed, "")) {
 		switch source.Source {
 		case "desktop-cache":
+			mixedSources[source.Source] = true
 			if !source.Allowed {
 				t.Fatalf("usable plaintext cache reported unavailable: %#v", source)
 			}
 		case "private-api":
+			mixedSources[source.Source] = true
 			if source.Allowed {
 				t.Fatalf("encrypted supabase state should block private-api: %#v", source)
 			}
 		}
+	}
+	if len(mixedSources) != 2 {
+		t.Fatalf("mixed-profile local sources missing: got %v", mixedSources)
 	}
 
 	report := Unlock(cfg, true)

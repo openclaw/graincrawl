@@ -16,6 +16,7 @@ import (
 	"github.com/openclaw/graincrawl/internal/granola"
 	"github.com/openclaw/graincrawl/internal/model"
 	"github.com/openclaw/graincrawl/internal/output"
+	"github.com/openclaw/graincrawl/internal/portable"
 	"github.com/openclaw/graincrawl/internal/store"
 )
 
@@ -364,22 +365,71 @@ func TestAppFormerEncryptedJSONHelperCommandCannotDecrypt(t *testing.T) {
 }
 
 func TestAppSnapshotExportImportUseTempArchive(t *testing.T) {
-	cfgPath := writeTestConfig(t)
+	ctx := context.Background()
+	sourceConfigPath := writeTestConfig(t)
+	sourceConfig, _, err := config.Load(sourceConfigPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := store.Open(ctx, sourceConfig.Paths.DBPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer source.Close()
+	title, body := "Snapshot note", "Synthetic archived note body"
+	now := time.Date(2026, 7, 16, 12, 0, 0, 0, time.UTC)
+	if err := source.UpsertNote(ctx, model.Note{
+		ID: "snapshot-note", Title: &title, NotesPlain: &body, Type: "meeting",
+		CreatedAt: now, UpdatedAt: now, LastSeenAt: now, Source: model.SourcePrivateAPI,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	destinationConfigPath := writeTestConfig(t)
 	snapshotDir := filepath.Join(t.TempDir(), "snapshot")
-	var out bytes.Buffer
-	app := App{Stdout: &out}
-	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "snapshot", "create", "--out", snapshotDir}); err != nil {
-		t.Fatalf("snapshot create failed: %v", err)
+	for _, step := range []struct {
+		args []string
+		mode string
+	}{
+		{args: []string{"--json", "--config", sourceConfigPath, "snapshot", "create", "--out", snapshotDir}},
+		{args: []string{"--json", "--config", destinationConfigPath, "import", snapshotDir}, mode: "merge"},
+	} {
+		var out bytes.Buffer
+		app := App{Stdout: &out}
+		if err := app.Run(ctx, step.args); err != nil {
+			t.Fatalf("snapshot command %q failed: %v", step.args, err)
+		}
+		var envelope struct {
+			OK     bool `json:"ok"`
+			Result struct {
+				SnapshotDir string             `json:"snapshot_dir"`
+				Mode        string             `json:"mode"`
+				Manifest    *portable.Manifest `json:"manifest"`
+			} `json:"result"`
+		}
+		if err := json.Unmarshal(out.Bytes(), &envelope); err != nil {
+			t.Fatalf("decode snapshot command %q: %v", step.args, err)
+		}
+		if !envelope.OK || envelope.Result.SnapshotDir != snapshotDir || envelope.Result.Mode != step.mode || envelope.Result.Manifest == nil || len(envelope.Result.Manifest.Tables) == 0 {
+			t.Fatalf("snapshot command %q returned unexpected envelope: %s", step.args, out.String())
+		}
 	}
-	if !strings.Contains(out.String(), `"manifest"`) {
-		t.Fatalf("snapshot output missing manifest: %s", out.String())
+
+	destinationConfig, _, err := config.Load(destinationConfigPath)
+	if err != nil {
+		t.Fatal(err)
 	}
-	out.Reset()
-	if err := app.Run(context.Background(), []string{"--json", "--config", cfgPath, "import", snapshotDir}); err != nil {
-		t.Fatalf("snapshot import failed: %v", err)
+	destination, err := store.Open(ctx, destinationConfig.Paths.DBPath)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), `"manifest"`) {
-		t.Fatalf("import output missing manifest: %s", out.String())
+	defer destination.Close()
+	note, ok, err := destination.GetNote(ctx, "snapshot-note")
+	if err != nil || !ok {
+		t.Fatalf("imported snapshot note: ok=%v err=%v", ok, err)
+	}
+	if note.Title == nil || *note.Title != title || note.NotesPlain == nil || *note.NotesPlain != body || note.Source != model.SourcePrivateAPI {
+		t.Fatalf("imported snapshot note payload changed: %#v", note)
 	}
 }
 

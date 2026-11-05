@@ -537,11 +537,34 @@ func TestAppSQLRunsReadOnlyQueries(t *testing.T) {
 	if err := app.Run(ctx, []string{"--json", "--config", cfgPath, "sql", "select source, count(*) as notes from notes group by source"}); err != nil {
 		t.Fatalf("sql failed: %v", err)
 	}
-	if !strings.Contains(out.String(), `"columns"`) || !strings.Contains(out.String(), `private-api`) {
-		t.Fatalf("sql json missing result: %s", out.String())
+	var envelope struct {
+		OK     bool   `json:"ok"`
+		Error  string `json:"error"`
+		Result struct {
+			Columns []string   `json:"columns"`
+			Rows    [][]string `json:"rows"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode sql result: %v", err)
+	}
+	if !envelope.OK || envelope.Error != "" || !slices.Equal(envelope.Result.Columns, []string{"source", "notes"}) || len(envelope.Result.Rows) != 1 || !slices.Equal(envelope.Result.Rows[0], []string{"private-api", "1"}) {
+		t.Fatalf("unexpected sql result: %s", out.String())
 	}
 	if err := app.Run(ctx, []string{"--config", cfgPath, "sql", "delete from notes"}); err == nil || !strings.Contains(err.Error(), "only read-only sql is allowed") {
 		t.Fatalf("expected read-only rejection, got %v", err)
+	}
+	st, err = store.Open(ctx, cfg.Paths.DBPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	note, ok, err := st.GetNote(ctx, "doc-1")
+	if err != nil || !ok {
+		t.Fatalf("note after rejected write: ok=%v err=%v", ok, err)
+	}
+	if note.Title == nil || *note.Title != title || note.Source != model.SourcePrivateAPI {
+		t.Fatalf("rejected write changed note: %#v", note)
 	}
 }
 

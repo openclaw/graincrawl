@@ -199,3 +199,14 @@ No production behavior, live Granola data, credentials, or releases changed.
   runs pass in both versions.
 - Validate with full syncer race tests, `make check`, independent review and
   platform CI. No production changes, live API requests, credentials or releases.
+
+## Later-batch failure fixture
+
+- Reduce the second-batch failure fixture from 101 documents to 51: one full
+  batch of 50 and one document in the failing batch. The third batch was never
+  reached. Keep every request-count, no-write and failed-run assertion unchanged.
+- Six before/after race probes pass their expected outcomes: healthy versions
+  pass; ignored second-batch errors and premature writes fail both versions.
+- Retain the separate 0/1/50/51/98/101 batch boundary cases. Validate with full
+  syncer/private API race tests, `make check`, review and platform CI. No
+  production changes, live requests, credentials or releases.

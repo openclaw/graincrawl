@@ -169,6 +169,11 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+          # Snapshot builds need a separate cache from faster validation jobs.
+          cache-dependency-path: |
+            go.sum
+            .goreleaser.yml
+            .github/workflows/ci.yml
 
       - name: Snapshot release build
         uses: goreleaser/goreleaser-action@v7.2.3

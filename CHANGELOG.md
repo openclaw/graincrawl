@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Keep snapshot CI build caches separate from validation jobs and refresh them when the release configuration or workflow changes.
+
 - Share one Linux validation worker and Go cache for dependency checks, static analysis, tests, and CLI smoke checks, retaining the required dependency and lint status checks.
 
 - Build and verify both macOS architectures on one CI worker, sharing setup and a cache containing both targets while retaining macOS 13 and Intel execution checks.

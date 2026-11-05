@@ -187,3 +187,15 @@ No production behavior, live Granola data, credentials, or releases changed.
   identity, title and pagination values while healthy code passes.
 - Validate with public API race tests, full `make check`, independent review and
   platform CI. No production changes, live requests, credentials or releases.
+
+## Duplicate hydration fetch errors
+
+- Remove the standalone transcript/panel fetch-error table. The existing
+  partial-write/retry test exercises both endpoints and requires the same error
+  and absence of an `ok` sync run, plus retained writes and a successful retry.
+- Keep that stronger test, fixtures, helpers and all other tests unchanged.
+- Before and after removal, race probes reject independently ignored transcript
+  and panel errors and false successful-run records for either endpoint. Healthy
+  runs pass in both versions.
+- Validate with full syncer race tests, `make check`, independent review and
+  platform CI. No production changes, live API requests, credentials or releases.

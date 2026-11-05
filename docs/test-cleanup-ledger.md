@@ -119,3 +119,17 @@ No production behavior, live Granola data, credentials, or releases changed.
   platform CI. Only synthetic temporary profiles and credential-free build
   artifacts are used; no production behavior, live Granola data, credentials or
   releases change.
+
+## Versioned migration diagnostic
+
+- Remove the standalone versioned migration-message assertion: the retained
+  doctor integration test checks the same exact message through a temporary
+  migrated profile, app-version plist, app inspection and diagnostic routing.
+  It also requires the migration state, diagnostic code and severity.
+- Healthy before/after race probes pass. Omitting either the version or the
+  migration message makes both original tests fail, and the retained integration
+  test still fails after the standalone test is removed.
+- Keep the four profile-state cases and token-parser test unchanged. Validate
+  with granola/doctor race tests, full `make check`, independent review and
+  platform CI. No production behavior, live Granola data, credentials or
+  releases change.

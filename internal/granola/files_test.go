@@ -55,11 +55,3 @@ func TestPostMigrationState(t *testing.T) {
 		})
 	}
 }
-
-func TestPostMigrationDiagnosticIncludesVersionWhenAvailable(t *testing.T) {
-	got := PostMigrationDiagnostic("7.441.6")
-	want := PostMigrationStateMessage + " Detected Granola version 7.441.6."
-	if got != want {
-		t.Fatalf("PostMigrationDiagnostic() = %q, want %q", got, want)
-	}
-}

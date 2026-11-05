@@ -105,3 +105,17 @@ No production behavior, live Granola data, credentials, or releases changed.
   platform CI. Only synthetic temporary archives and credential-free build
   artifacts are used; no production behavior, Granola data, credentials or
   releases change.
+
+## Migrated source support presence
+
+- Require the migrated-profile test to observe all three local source identities,
+  plus both private-API and desktop-cache entries in its mixed-profile case.
+  Keep the existing allowed-state, migration-message and unlock checks.
+- The old test passed when private-API, desktop-cache or encrypted-JSON support
+  disappeared. It also passed when either mixed-profile source disappeared on
+  its own. Temporary omission overlays reproduce those false greens; the repaired
+  test rejects every omission under the race detector, while healthy code passes.
+- Validate with security race tests, full `make check`, independent review and
+  platform CI. Only synthetic temporary profiles and credential-free build
+  artifacts are used; no production behavior, live Granola data, credentials or
+  releases change.

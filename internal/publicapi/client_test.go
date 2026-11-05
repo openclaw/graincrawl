@@ -57,24 +57,28 @@ func TestClientErrorDoesNotExposeResponseBody(t *testing.T) {
 	}
 }
 
-func TestClientRetriesRateLimitWithoutExposingBody(t *testing.T) {
+func TestClientRetriesRateLimitAndReturnsPage(t *testing.T) {
 	requests := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests++
 		if requests == 1 {
 			w.Header().Set("Retry-After", "0")
-			http.Error(w, `{"secret":"must-not-leak"}`, http.StatusTooManyRequests)
+			http.Error(w, "rate limited", http.StatusTooManyRequests)
 			return
 		}
-		_, _ = w.Write([]byte(`{"notes":[],"hasMore":false,"cursor":null}`))
+		_, _ = w.Write([]byte(`{"notes":[{"id":"not_12345678901234","title":"Retried note"}],"hasMore":true,"cursor":"next-page"}`))
 	}))
 	defer srv.Close()
 	client := Client{BaseURL: srv.URL, APIKey: "test-key", RequestInterval: -1}
-	if _, err := client.ListNotes(context.Background(), "", 1); err != nil {
+	page, err := client.ListNotes(context.Background(), "", 1)
+	if err != nil {
 		t.Fatal(err)
 	}
 	if requests != 2 {
 		t.Fatalf("requests = %d", requests)
+	}
+	if len(page.Notes) != 1 || page.Notes[0].ID != "not_12345678901234" || page.Notes[0].Title == nil || *page.Notes[0].Title != "Retried note" || !page.HasMore || page.Cursor == nil || *page.Cursor != "next-page" {
+		t.Fatalf("retried page = %#v", page)
 	}
 }
 

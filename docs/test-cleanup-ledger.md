@@ -173,3 +173,17 @@ No production behavior, live Granola data, credentials, or releases changed.
 - Validate with CLI race tests, full `make check`, built-CLI query/rejection/data
   preservation checks, independent review and platform CI. No production changes,
   live Granola data, credentials or releases.
+
+## Public API retry results
+
+- Keep the existing rate-limit retry test and its two-request check. Return one
+  synthetic note and continuation instead of an empty page, then require the
+  returned identity, title and pagination values.
+- Rename the test to describe retry/result coverage and replace the unused
+  secret-bearing error fixture. The separate unauthorized-response test still
+  checks error-body redaction.
+- The complete public API race suite previously passed when successful retried
+  responses were discarded. Require the repaired test to reject lost page,
+  identity, title and pagination values while healthy code passes.
+- Validate with public API race tests, full `make check`, independent review and
+  platform CI. No production changes, live requests, credentials or releases.

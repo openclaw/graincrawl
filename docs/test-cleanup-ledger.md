@@ -75,3 +75,18 @@ No production behavior, live Granola data, credentials, or releases changed.
 - Five escaped-leak overlays pass the old test and fail the repaired test under
   the race detector. Validate malformed output, normal CLI race tests, full
   local gates, independent review and CI with synthetic temporary profiles only.
+
+## Child tombstone inheritance
+
+- Remove `TestChildUpsertsInheritExistingDocumentTombstone`: the retained
+  `TestNoteDeletionStubHydration` already creates a parent tombstone, inserts all
+  three child types, and checks their inherited deletion timestamp, source and
+  reason before any hydration. Its three source cases repeat those checks after
+  hydration and precedence updates.
+- Keep migration reconciliation, snapshot import, Unicode search and export
+  publication tests; these exercise different boundaries. Disable inheritance
+  separately for transcript, panel and source-object rows in temporary overlays
+  and require the retained test to reject each fault before and after removal.
+- Run store race tests, full `make check`, independent review and platform CI.
+  Only synthetic temporary archives and credential-free build artifacts are used;
+  no production behavior, Granola data, credentials or releases change.

@@ -159,3 +159,17 @@ No production behavior, live Granola data, credentials, or releases changed.
 - Validate with CLI race tests, full `make check`, a built-CLI roundtrip between
   isolated databases, independent review and platform CI. No production changes,
   live Granola data, credentials or releases.
+
+## CLI SQL results and rejected writes
+
+- Decode the successful SQL envelope and require the exact column names and
+  single source/count row. Replace substring checks that missed lost values.
+- Keep the rejected-delete error check, then reopen the selected archive and
+  require the seeded note's presence, title and source. An error alone did not
+  prove the rejected statement left the note intact.
+- The old test passed lost-result-value and write-before-rejection faults. The
+  repaired test rejects both, plus independent title/source changes, under the
+  race detector; healthy code passes.
+- Validate with CLI race tests, full `make check`, built-CLI query/rejection/data
+  preservation checks, independent review and platform CI. No production changes,
+  live Granola data, credentials or releases.

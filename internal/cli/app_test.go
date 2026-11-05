@@ -310,12 +310,30 @@ func TestAppExplicitEncryptedJSONUnlockRedactsPayload(t *testing.T) {
 	if decryptCalls != 1 {
 		t.Fatalf("expected one explicit decryptor call, got %d", decryptCalls)
 	}
-	text := unlockOut.String()
-	for _, want := range []string{`"surface": "encrypted-json"`, `"document_count": 1`, `"present": true`} {
-		if !strings.Contains(text, want) {
-			t.Fatalf("unlock output missing %q:\n%s", want, text)
-		}
+	var payload map[string]any
+	if err := json.Unmarshal(unlockOut.Bytes(), &payload); err != nil {
+		t.Fatalf("decode unlock output: %v", err)
 	}
+	if payload["ok"] != true {
+		t.Fatalf("unlock envelope = %v", payload)
+	}
+	result, ok := payload["result"].(map[string]any)
+	if !ok || result["surface"] != "encrypted-json" || result["keychain_accessed"] != true {
+		t.Fatalf("unlock result = %v", payload["result"])
+	}
+	cache, ok := result["cache"].(map[string]any)
+	if !ok || cache["document_count"] != float64(1) {
+		t.Fatalf("unlock cache summary = %v", result["cache"])
+	}
+	token, ok := result["token"].(map[string]any)
+	if !ok || token["present"] != true {
+		t.Fatalf("unlock token summary = %v", result["token"])
+	}
+	normalized, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(normalized)
 	for _, forbidden := range []string{"synthetic-secret-token", "synthetic-refresh-token", "Sensitive title", "Sensitive note", "private@example.com"} {
 		if strings.Contains(text, forbidden) {
 			t.Fatalf("unlock output leaked %q:\n%s", forbidden, text)

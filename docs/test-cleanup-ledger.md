@@ -65,3 +65,13 @@ No production behavior, live Granola data, credentials, or releases changed.
   checks remain intact. Validate with publicapi/syncer race tests, full local
   gates, isolated CLI smoke, credential-free snapshots, independent review, and
   PR CI. No live Granola profiles, archives, credentials, APIs, or releases.
+
+## Decoded unlock redaction
+
+- Decode the full unlock JSON envelope and check its success, surface, Keychain,
+  cache count and token-summary fields. Keep the existing decrypt-call checks.
+- Scan the normalized decoded payload, including unknown fields, for all five
+  private fixture values. The old raw-text scan missed Unicode-escaped leaks.
+- Five escaped-leak overlays pass the old test and fail the repaired test under
+  the race detector. Validate malformed output, normal CLI race tests, full
+  local gates, independent review and CI with synthetic temporary profiles only.

@@ -100,7 +100,7 @@ func TestSyncPrivateFailsWhenBatchHydrateErrors(t *testing.T) {
 
 func TestSyncPrivateLaterBatchFailurePreventsWrites(t *testing.T) {
 	ctx := context.Background()
-	docs := make([]privateapi.Document, 101)
+	docs := make([]privateapi.Document, 51)
 	for i := range docs {
 		docs[i] = privateapi.Document{ID: fmt.Sprintf("doc-%d", i), Type: "meeting"}
 	}

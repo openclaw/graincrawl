@@ -224,3 +224,15 @@ No production behavior, live Granola data, credentials, or releases changed.
 - Validate full local gates, independent review and credential-free platform
   CI. Temporary synthetic homes/profiles/archives only; no live Granola access,
   Keychain prompts or releases.
+
+## Canonical note replacement records
+
+- Reuse the existing ten-case source/freshness matrix and its SQLite fixture.
+  Compare the complete canonical note after both the initial update and retry,
+  retaining deletion evidence when the retry omits it.
+- Give accepted replacements distinct body and summary values. The old full
+  suite accepted stale promoted bodies and missing promoted summaries.
+- Compare healthy and faulted full race suites before and after using temporary
+  Go overlays, including the existing precedence rejection as a control.
+- Validate with full local gates, independent review and platform CI. No new
+  test, helper or production change; synthetic temporary archives only.

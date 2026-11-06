@@ -181,8 +181,8 @@ func TestNotePriorityAndFreshness(t *testing.T) {
 			if tc.older {
 				incoming.UpdatedAt = now.Add(-500 * time.Nanosecond)
 			}
-			replacement := "replacement"
-			incoming.NotesPlain = &replacement
+			replacement, replacementSummary := "replacement", "replacement summary"
+			incoming.NotesPlain, incoming.SummaryText = &replacement, &replacementSummary
 			if tc.clear {
 				incoming.NotesPlain, incoming.SummaryText = nil, nil
 			}
@@ -195,23 +195,21 @@ func TestNotePriorityAndFreshness(t *testing.T) {
 			if err != nil || !ok {
 				t.Fatalf("read: %v %v", ok, err)
 			}
+			want := incoming
 			if tc.keep {
-				if got.Source != original.Source || !got.UpdatedAt.Equal(original.UpdatedAt) || got.NotesPlain == nil || *got.NotesPlain != body || got.SummaryText == nil || *got.SummaryText != summary {
-					t.Fatalf("canonical content regressed: %+v", got)
-				}
-			} else if got.Source != incoming.Source || !got.UpdatedAt.Equal(incoming.UpdatedAt) || (tc.clear && (got.NotesPlain != nil || got.SummaryText != nil)) {
-				t.Fatalf("authoritative update rejected: %+v", got)
+				want = original
 			}
-			if got.DeletedAt == nil || !got.DeletedAt.Equal(deleted) {
-				t.Fatal("lost tombstone")
+			want.DeletedAt, want.DeletionSource = &deleted, string(tc.to)
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("canonical note: got=%+v want=%+v", got, want)
 			}
 			incoming.DeletedAt = nil
 			if err := st.UpsertNote(ctx, incoming); err != nil {
 				t.Fatal(err)
 			}
-			got, _, err = st.GetNote(ctx, "note")
-			if err != nil || got.DeletedAt == nil {
-				t.Fatalf("cleared existing tombstone: %v", err)
+			got, ok, err = st.GetNote(ctx, "note")
+			if err != nil || !ok || !reflect.DeepEqual(got, want) {
+				t.Fatalf("canonical note after retry: got=%+v want=%+v found=%t err=%v", got, want, ok, err)
 			}
 		})
 	}

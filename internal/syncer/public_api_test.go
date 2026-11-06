@@ -6,8 +6,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/openclaw/graincrawl/internal/config"
 	"github.com/openclaw/graincrawl/internal/model"
@@ -51,16 +53,28 @@ func TestSyncPublicArchivesSummariesAndTranscriptsAcrossPages(t *testing.T) {
 	if result.Source != model.SourcePublicAPI || result.Notes != 2 || result.Transcripts != 1 || result.Panels != 0 || !strings.Contains(result.Message, "does not expose panels") {
 		t.Fatalf("result = %#v", result)
 	}
-	note, ok, err := st.GetNote(ctx, "not_11111111111111")
-	if err != nil || !ok {
-		t.Fatalf("note: ok=%v err=%v", ok, err)
+	_, rows, err := st.ReadOnlyQuery(ctx, `SELECT id, title, type, created_at,
+		updated_at, calendar_event_id, summary_text, summary_markdown, source
+		FROM notes ORDER BY id`)
+	wantRows := [][]string{
+		{"not_11111111111111", "First", "meeting", "2026-08-03T01:00:00Z",
+			"2026-08-03T02:00:00Z", "event-1", "plain summary", "## Summary", "public-api"},
+		{"not_22222222222222", "Second", "meeting", "2026-08-03T03:00:00Z",
+			"2026-08-03T04:00:00Z", "", "", "", "public-api"},
 	}
-	if note.Source != model.SourcePublicAPI || note.SummaryMarkdown == nil || *note.SummaryMarkdown != "## Summary" || note.CalendarEventID == nil || *note.CalendarEventID != "event-1" {
-		t.Fatalf("note = %#v", note)
+	if err != nil || !reflect.DeepEqual(rows, wantRows) {
+		t.Fatalf("archived notes = %#v, want %#v, err=%v", rows, wantRows, err)
 	}
-	chunks, err := st.ListTranscript(ctx, note.ID)
-	if err != nil || len(chunks) != 1 || chunks[0].Text != "archived transcript" {
+	chunks, err := st.ListTranscript(ctx, "not_11111111111111")
+	if err != nil || len(chunks) != 1 {
 		t.Fatalf("chunks = %#v err=%v", chunks, err)
+	}
+	chunk := chunks[0]
+	if chunk.DocumentID != "not_11111111111111" || chunk.Text != "archived transcript" ||
+		chunk.Source != "microphone" || !chunk.IsFinal ||
+		chunk.StartTimestamp.Format(time.RFC3339Nano) != "2026-08-03T01:00:00Z" ||
+		chunk.EndTimestamp.Format(time.RFC3339Nano) != "2026-08-03T01:00:01Z" {
+		t.Fatalf("archived transcript = %#v", chunk)
 	}
 	objects, err := st.ListSourceObjects(ctx, "", 10)
 	if err != nil || len(objects) != 3 {

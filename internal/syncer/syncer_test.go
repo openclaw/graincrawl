@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openclaw/graincrawl/internal/cachev6"
 	"github.com/openclaw/graincrawl/internal/config"
 	"github.com/openclaw/graincrawl/internal/encryptedjson"
 	"github.com/openclaw/graincrawl/internal/granola"
@@ -688,35 +689,46 @@ func TestDesktopCacheLimitArchivesNewestDocumentsDeterministically(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Go randomizes map iteration, so repeat to catch an order-dependent limit.
+	file, err := cachev6.Parse(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Repeat the in-memory ordering check, then verify one actual import below.
 	for attempt := 0; attempt < 20; attempt++ {
-		root := t.TempDir()
-		profile := filepath.Join(root, "Granola")
-		if err := os.MkdirAll(profile, 0o700); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), raw, 0o600); err != nil {
-			t.Fatal(err)
-		}
-		st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
-		cfg := config.Config{
-			Granola: config.GranolaConfig{ProfilePath: profile, AllowDesktopCache: true},
-			Sync:    config.SyncConfig{DefaultLimit: 100},
-		}
-		if _, err := Run(ctx, cfg, st, Options{Source: model.SourceDesktopCache, Limit: 3}); err != nil {
-			t.Fatal(err)
-		}
-		notes, err := st.ListNotes(ctx, 100)
-		_ = st.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
 		var got []string
-		for _, note := range notes {
-			got = append(got, note.ID)
+		for _, doc := range newestDocumentsFirst(file.Cache.State.Documents) {
+			got = append(got, doc.ID)
 		}
-		if strings.Join(got, ",") != "doc-9,doc-8,doc-7" {
-			t.Fatalf("attempt %d: limited desktop cache sync archived %v, want the three newest documents", attempt, got)
+		if strings.Join(got, ",") != "doc-9,doc-8,doc-7,doc-6,doc-5,doc-4,doc-3,doc-2,doc-1" {
+			t.Fatalf("attempt %d: cache order = %v, want newest documents first", attempt, got)
 		}
+	}
+	root := t.TempDir()
+	profile := filepath.Join(root, "Granola")
+	if err := os.MkdirAll(profile, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(profile, "cache-v6.json"), raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st := openSyncTestStore(t, ctx, filepath.Join(root, "graincrawl.db"))
+	cfg := config.Config{
+		Granola: config.GranolaConfig{ProfilePath: profile, AllowDesktopCache: true},
+		Sync:    config.SyncConfig{DefaultLimit: 100},
+	}
+	if _, err := Run(ctx, cfg, st, Options{Source: model.SourceDesktopCache, Limit: 3}); err != nil {
+		t.Fatal(err)
+	}
+	notes, err := st.ListNotes(ctx, 100)
+	_ = st.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, note := range notes {
+		got = append(got, note.ID)
+	}
+	if strings.Join(got, ",") != "doc-9,doc-8,doc-7" {
+		t.Fatalf("limited desktop cache sync archived %v, want the three newest documents", got)
 	}
 }

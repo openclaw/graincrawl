@@ -210,3 +210,17 @@ No production behavior, live Granola data, credentials, or releases changed.
 - Retain the separate 0/1/50/51/98/101 batch boundary cases. Validate with full
   syncer/private API race tests, `make check`, review and platform CI. No
   production changes, live requests, credentials or releases.
+
+## Desktop limit ordering fixture
+
+- Keep twenty map-order probes in the existing newest-document test, checking
+  the complete literal nine-document order in memory.
+- Run its real desktop-cache import once, retaining the same nine documents,
+  three-note limit and exact archived IDs. Remove nineteen repeated profile,
+  cache-file and SQLite setups. No new test, helper or production change.
+- Compare full syncer race suites before and after with unsorted documents,
+  reversed update ordering and an ignored limit in temporary Go overlays.
+  Healthy versions pass and all three faults remain detected.
+- Validate full local gates, independent review and credential-free platform
+  CI. Temporary synthetic homes/profiles/archives only; no live Granola access,
+  Keychain prompts or releases.

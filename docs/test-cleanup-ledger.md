@@ -20,7 +20,7 @@ These command-level tests use temporary archives, not live Granola data.
 The optional live API contract test remains opt-in; no credentials or releases
 are required for this cleanup.
 
-Remaining: complete the semantic audit of the other packages and crawl apps.
+Remaining: continue the semantic audit of the other crawl apps.
 
 ## CLI control contracts
 
@@ -236,3 +236,21 @@ No production behavior, live Granola data, credentials, or releases changed.
   Go overlays, including the existing precedence rejection as a control.
 - Validate with full local gates, independent review and platform CI. No new
   test, helper or production change; synthetic temporary archives only.
+
+## Public API archive mapping fixtures
+
+- Reuse the real two-page HTTP-to-SQLite import to compare both archived notes'
+  IDs, titles, type, timestamps, calendar link, summaries and source with literal
+  expected rows. Check transcript document, text, source, final flag and times.
+- Remove the duplicate summary-normalizer setup from the transcript identity
+  test. Keep occurrence and correction identity/hash checks. Rename the cursor
+  encoding test to describe its actual boundary.
+- The old full suite accepted missing note titles and incorrect transcript end
+  times. Compare healthy and faulted full race suites before/after, retaining
+  a wrong-summary control to verify the moved assertions.
+- Validate with full local gates, independent review and platform CI. Temporary
+  synthetic HTTP/profile/archive data only; no production change or release.
+
+This semantic pass read all 24 current Go test files and their owning sources.
+Retain the distinct adapter, archive, error and CLI contracts described above.
+Follow-up: shell completion omits the implemented `check-update` command.

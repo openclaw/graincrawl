@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func TestClientPaginatesAndIncludesTranscript(t *testing.T) {
+func TestClientEncodesCursorAndIncludesTranscript(t *testing.T) {
 	var requests []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer test-key" {
@@ -115,34 +115,19 @@ func TestRetryDelayCapsDeltaSecondsAndHTTPDate(t *testing.T) {
 	}
 }
 
-func TestNormalizersPreserveSummaryAndStableTranscriptIdentity(t *testing.T) {
-	title := "Planning"
-	markdown := "summary"
-	note, err := NoteToModel(Note{
-		ID:              "not_12345678901234",
-		Title:           &title,
-		CreatedAt:       "2026-08-03T01:00:00Z",
-		UpdatedAt:       "2026-08-03T02:00:00Z",
-		SummaryText:     "plain",
-		SummaryMarkdown: &markdown,
-	}, time.Now())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if note.Source != "public-api" || note.SummaryText == nil || *note.SummaryText != "plain" || note.SummaryMarkdown == nil || *note.SummaryMarkdown != "summary" {
-		t.Fatalf("note = %#v", note)
-	}
+func TestTranscriptIdentitySurvivesCorrections(t *testing.T) {
+	const noteID = "not_12345678901234"
 	input := Transcript{
 		Speaker:   Speaker{Source: "microphone", Attribution: "me"},
 		Text:      "hello",
 		StartTime: "2026-08-03T01:00:00Z",
 		EndTime:   "2026-08-03T01:00:01Z",
 	}
-	first, err := TranscriptToModel(note.ID, input, 0)
+	first, err := TranscriptToModel(noteID, input, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := TranscriptToModel(note.ID, input, 1)
+	second, err := TranscriptToModel(noteID, input, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +137,7 @@ func TestNormalizersPreserveSummaryAndStableTranscriptIdentity(t *testing.T) {
 	corrected := input
 	corrected.Text = "corrected"
 	corrected.Speaker.Attribution = "Speaker 1"
-	replacement, err := TranscriptToModel(note.ID, corrected, 0)
+	replacement, err := TranscriptToModel(noteID, corrected, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

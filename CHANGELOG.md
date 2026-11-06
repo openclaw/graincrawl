@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 0.4.9 - 2026-11-06
 
 **Highlights:** Preserve literal SQLite paths when opening archives and checking freshness.

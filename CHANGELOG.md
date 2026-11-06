@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.4.9 - 2026-11-06
+
+**Highlights:** Preserve literal SQLite paths when opening archives and checking freshness.
+
+- Update CrawlKit to v0.17.4 to preserve literal SQLite paths when opening archives, taking snapshots, and checking freshness; reject ambiguous Windows paths.
 
 - Keep snapshot CI build caches separate from validation jobs and refresh them when the release configuration or workflow changes.
 

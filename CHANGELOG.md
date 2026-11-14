@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Pin modernc.org/libc to v1.80.1, matching SQLite v1.62.0's required dependency.
+
 - Refresh SQLite, terminal metadata, Go support libraries, and secret scanning while retaining Go 1.27.4 and CrawlKit 0.17.4. Thanks @dependabot! #163 #164
 
 - Build with Go 1.27.4 to fix GO-2026-6859 in the standard library.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Build with Go 1.27.4 to fix GO-2026-6859 in the standard library.
+
 ## 0.4.9 - 2026-11-06
 
 **Highlights:** Preserve literal SQLite paths when opening archives and checking freshness.

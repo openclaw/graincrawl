@@ -1,6 +1,6 @@
 module github.com/openclaw/graincrawl
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/openclaw/crawlkit v0.17.4

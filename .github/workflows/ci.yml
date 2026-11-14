@@ -149,7 +149,7 @@ jobs:
       fail-fast: false
       matrix:
         check: [deps, lint]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 2
     steps:
       - name: Require successful Linux validation

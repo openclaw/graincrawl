@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Build with Go 1.27.4 to fix GO-2026-6859 in the standard library.
+- Run the dependency and lint status-only CI jobs on single-CPU Ubuntu containers while preserving their required check names and failure propagation.
 
 ## 0.4.9 - 2026-11-06
 

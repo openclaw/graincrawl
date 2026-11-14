@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Refresh SQLite, terminal metadata, Go support libraries, and secret scanning while retaining Go 1.27.4 and CrawlKit 0.17.4. Thanks @dependabot! #163 #164
+
 - Build with Go 1.27.4 to fix GO-2026-6859 in the standard library.
 - Run the dependency and lint status-only CI jobs on single-CPU Ubuntu containers while preserving their required check names and failure propagation.
 

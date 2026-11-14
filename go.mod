@@ -5,7 +5,7 @@ go 1.27.4
 require (
 	github.com/openclaw/crawlkit v0.17.4
 	github.com/pelletier/go-toml/v2 v2.4.3
-	modernc.org/sqlite v1.61.1
+	modernc.org/sqlite v1.62.0
 )
 
 require (
@@ -35,7 +35,7 @@ require (
 	github.com/xo/terminfo v1.2.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
-	modernc.org/libc v1.79.0 // indirect
+	modernc.org/libc v1.80.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
 )

@@ -2,11 +2,16 @@
 
 ## Unreleased
 
+## 0.4.10 - 2026-11-15
+
+**Highlights:** Fix the Go standard-library security issue GO-2026-6859 and refresh SQLite dependencies.
+
+- Build with Go 1.27.4 to fix GO-2026-6859 in the standard library.
+
 - Pin modernc.org/libc to v1.80.1, matching SQLite v1.62.0's required dependency.
 
 - Refresh SQLite, terminal metadata, Go support libraries, and secret scanning while retaining Go 1.27.4 and CrawlKit 0.17.4. Thanks @dependabot! #163 #164
 
-- Build with Go 1.27.4 to fix GO-2026-6859 in the standard library.
 - Run the dependency and lint status-only CI jobs on single-CPU Ubuntu containers while preserving their required check names and failure propagation.
 
 ## 0.4.9 - 2026-11-06

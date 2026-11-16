@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Accept tabs, Windows line endings, and form feeds after read-only SQL keywords instead of rejecting valid queries.
+
 ## 0.4.10 - 2026-11-15
 
 **Highlights:** Fix the Go standard-library security issue GO-2026-6859 and refresh SQLite dependencies.

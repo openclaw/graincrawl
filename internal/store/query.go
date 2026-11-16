@@ -35,11 +35,13 @@ func (s *Store) ReadOnlyQuery(ctx context.Context, query string) ([]string, [][]
 
 func IsReadOnlySQL(query string) bool {
 	query = strings.TrimLeft(strings.ToLower(strings.TrimSpace(query)), " \t\r\n(")
-	return strings.HasPrefix(query, "select ") ||
-		strings.HasPrefix(query, "select\n") ||
-		strings.HasPrefix(query, "with ") ||
-		strings.HasPrefix(query, "with\n") ||
-		strings.HasPrefix(query, "pragma ")
+	for _, keyword := range []string{"select", "with", "pragma"} {
+		if strings.HasPrefix(query, keyword) && len(query) > len(keyword) &&
+			strings.ContainsRune(" \t\r\n\f", rune(query[len(keyword)])) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Store) openReadOnlyDB() (*sql.DB, func(), error) {

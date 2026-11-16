@@ -74,6 +74,8 @@ graincrawl --json notes
 graincrawl --json sql "select count(*) as notes from notes"
 ```
 
+SQL queries may use tabs and Windows line endings after statement keywords.
+
 ## Portable snapshots
 
 Snapshots move the archive between machines without touching the live Granola profile:

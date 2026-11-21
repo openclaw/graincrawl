@@ -3,7 +3,7 @@ module github.com/openclaw/graincrawl
 go 1.27.4
 
 require (
-	github.com/openclaw/crawlkit v0.17.4
+	github.com/openclaw/crawlkit v0.18.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	modernc.org/sqlite v1.62.0
 )
@@ -14,7 +14,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.10 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
-	github.com/charmbracelet/x/ansi v0.11.9 // indirect
+	github.com/charmbracelet/x/ansi v0.11.10 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.15 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
@@ -38,5 +38,5 @@ require (
 	// Match the libc version required by modernc.org/sqlite.
 	modernc.org/libc v1.80.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.12.1 // indirect
+	modernc.org/memory v1.13.0 // indirect
 )

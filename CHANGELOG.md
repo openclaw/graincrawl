@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Update CrawlKit to 0.18.0 for archive and snapshot safety fixes, refresh terminal and memory dependencies, and update vulnerability, dead-code, and secret scanners. Thanks @dependabot! #172
+
 - Accept tabs, Windows line endings, and form feeds after read-only SQL keywords instead of rejecting valid queries.
 
 ## 0.4.10 - 2026-11-15

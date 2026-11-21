@@ -3,7 +3,7 @@
 VERSION ?= 0.0.0-dev
 TAG ?=
 ARCHIVES ?=
-GORELEASER := GOWORK=off go run github.com/goreleaser/goreleaser/v2@v2.18.3
+GORELEASER := GOWORK=off go run github.com/goreleaser/goreleaser/v2@v2.20.2
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS := -s -w \

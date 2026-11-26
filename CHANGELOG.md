@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Run secret scanning with TruffleHog 3.100.1 so the executable matches the workflow action. Thanks @dependabot! #176
+
 - Update CrawlKit to 0.18.0 for archive and snapshot safety fixes, refresh terminal and memory dependencies, and update vulnerability, dead-code, and secret scanners. Thanks @dependabot! #172
 
 - Accept tabs, Windows line endings, and form feeds after read-only SQL keywords instead of rejecting valid queries.
